@@ -13,16 +13,12 @@
 #include <CGAL/algorithm.h> //
 #include <CGAL/circulator.h>
 
-#include "../types.h"
-#include "../bdps/types.h"
 
+#include "constants.h"
+#include "delaunay/DelaunayL2.h"
+#include "../bdps/types.h"
 #include "Utilities.h"
 
-//#include "printers/GraphPrinter.h"
-#include "delaunay/DelaunayL2.h"
-#include "constants.h"
-//#include "tools/Metrics.h"
-//#include "tools/Utilities.h"
 
 
 namespace spanner {
@@ -52,7 +48,7 @@ namespace spanner {
                                     const size_t p,
                                     const size_t q,
                                     const cone_t numCones) {
-            const number_t alpha = 2 * PI / numCones;
+            const auto alpha = static_cast<number_t>(2 * PI / static_cast<number_t>(numCones));
             std::vector<cone_t> cone(3);
             for(int i=-1; i<2; ++i ) {
                 cone[i+1] = static_cast<cone_t>((2*PI
@@ -105,7 +101,7 @@ namespace spanner {
         std::tuple<index_t,index_t,index_t> getNeighborsInCone(const index_t p, const index_t q, const cone_t cone, const cone_t numCones,
                                                           const DelaunayL2& DT, const std::vector<VertexHandle>& handles, const std::vector<index_t>& closest,
                                                                std::vector<index_t>& Q) {
-            const number_t ALPHA = 2 * PI / numCones;
+            const auto ALPHA = static_cast<number_t>(2 * PI / static_cast<number_t>(numCones));
 
             // Line 2: Build Q
             auto N_p = DT.incident_vertices(handles[p]);
@@ -374,7 +370,7 @@ namespace spanner {
     } // namespace bcc2012
 
     template<size_t DEGREE = 7, size_t NUM_CONES = DEGREE + 1>
-    void BCC2012(const input_t& P, output_t& out) {
+    void BCC2012(const bdps::input_t& in, bdps::output_t& out) {
         using namespace bcc2012;
 
 
@@ -382,7 +378,7 @@ namespace spanner {
         //assert(DEGREE == 7 || DEGREE == 6);
 
         // Construct Delaunay triangulation
-//        vector<Point> P(pointsBegin, pointsEnd);
+        vector<Point> P(in);
         std::vector<index_t> index;
         spatialSort<K>(P, index);
 
@@ -463,8 +459,8 @@ namespace spanner {
             // Only continue if p and q both consent to add the edge
             if (pAbides && qAbides) {
                 E.emplace_back(p, q); // Place the edge
-                std::vector<index_t> pq = {p,q};
-                for(auto v : pq )
+                std::vector<index_t> pqVec = {p, q};
+                for(auto v : pqVec )
                     if(filled[v].count()==0) {
                         auto opposite = v == p ? q : p;
 //                        tikz.drawCones(handles[v]->point(),
@@ -487,9 +483,9 @@ namespace spanner {
 ////                    }
 //                }
 
-                // Wedge on each cone of pq and qp
+                // Wedge on each cone of pqVec and qp
                 // There will be at least one for each, but there could
-                // be two cones for one or both pq and qp if the edgeat(0)
+                // be two cones for one or both pqVec and qp if the edgeat(0)
                 // falls on the boundary of a cone and the cone is not already filled
                 std::vector<WedgeParameters> W; // holds the parameters for each call to wedge
 

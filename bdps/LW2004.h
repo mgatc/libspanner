@@ -6,10 +6,11 @@
 #include <unordered_set> // hashed adjacency list
 #include <vector> // vertex containers
 
-#include "printers/GraphPrinter.h"
-#include "tools/DelaunayL2.h"
-#include "tools/Utilities.h"
-#include "tools/Metrics.h"
+#include "constants.h"
+#include "delaunay/DelaunayLinf.h"
+#include "../bdps/types.h"
+#include "Utilities.h"
+
 
 
 namespace spanner {

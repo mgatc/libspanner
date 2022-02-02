@@ -31,8 +31,11 @@
 #include <CGAL/boost/iterator/counting_iterator.hpp>
 
 
-#include "tools/Metrics.h"
-#include "tools/Utilities.h"
+#include "constants.h"
+#include "delaunay/DelaunayLinf.h"
+#include "../bdps/types.h"
+#include "Utilities.h"
+
 
 namespace spanner {
 

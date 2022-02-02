@@ -32,6 +32,10 @@ add_executable(libspanner
 
         BoundedDegreePlaneSpanners.h
 
+        delaunay/DelaunayL2.h
+        delaunay/DelaunayLinf.h
+        delaunay/DelaunayTD.h
+
         constants.h
         types.h
 

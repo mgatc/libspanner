@@ -14,21 +14,19 @@
 #include <CGAL/Line_2.h>
 
 //Project library
-#include "tools/DelaunayL2.h"
-#include "printers/GraphPrinter.h"
-#include "tools/Metrics.h"
-#include "tools/Utilities.h"
+#include "constants.h"
+#include "delaunay/DelaunayL2.h"
+#include "../bdps/types.h"
+#include "Utilities.h"
 
 
 namespace spanner {
 
-    using namespace std;
-
     namespace bhs2017 {
 
         typedef CGAL::Line_2<K> Line;
-        typedef unordered_map<Edge, number_t, IndexPairHash, IndexPairComparator> EdgeBisectorMap;
-        typedef unordered_map<index_tPair, size_t, PointConeHash, PointConeComparator> PointConeMap;
+        typedef std::unordered_map<Edge, number_t, IndexPairHash, IndexPairComparator> EdgeBisectorMap;
+        typedef std::unordered_map<index_tPair, size_t, PointConeHash, PointConeComparator> PointConeMap;
 
 
         //Slopes of the cone boundry lines.
@@ -85,10 +83,10 @@ namespace spanner {
           (3.2) For each edge in L (sorted in non-decreasing order) Let i be the cone of p containing q if E_A has no edges with endpoint p in the
                 neighborhood of p in cone i and E_A has no edges with endpoint q in the neighborhood of q in cone i+3 then add edge (p,q) to E_A.
         */
-        inline void addIncident(vector<pair<size_t, size_t>> &E_A,
+        inline void addIncident(std::vector<std::pair<size_t, size_t>> &E_A,
                                 PointConeMap &AL_E_A,
-                                const vector<VertexHandle> &h,
-                                const vector<pair<index_tPair, number_t>> &l) {
+                                const std::vector<VertexHandle> &h,
+                                const std::vector<std::pair<index_tPair, number_t>> &l) {
             //Loops through the entire set L.
             for (auto e : l) {
 
@@ -119,12 +117,12 @@ namespace spanner {
             }
         }
 
-        inline void canonicalNeighborhood(vector<index_t> &canNeighbors,
+        inline void canonicalNeighborhood(std::vector<index_t> &canNeighbors,
                                           const index_t p,
                                           const index_t r,
                                           const cone_t cone,
                                           const DelaunayL2 &DT,
-                                          const vector<VertexHandle> &H,
+                                          const std::vector<VertexHandle> &H,
                                           const EdgeBisectorMap &B) {
 
             Edge e = make_pair(p, r);
@@ -160,11 +158,11 @@ namespace spanner {
             (4.4 c) Checks if end edges have a end point a or z in E_A and an edge different from one made with vertex b or y in cone 2 or 4 woth respect
                     to a and z if found the edge (b,c) or (w,y) is added.
         */
-        inline void addCanonical(vector<Edge> &E_CAN,
+        inline void addCanonical(std::vector<Edge> &E_CAN,
                                  const index_t p,
                                  const index_t r,
                                  const DelaunayL2 &DT,
-                                 const vector<VertexHandle> &H,
+                                 const std::vector<VertexHandle> &H,
                                  const EdgeBisectorMap &B,
                                  PointConeMap &AL_e_a) {
 
@@ -175,7 +173,7 @@ namespace spanner {
             cone_t p_cone = getCone(p, r, H);
 
             //Set of the canonical neighborhood of p in the cone of p containing r. (This cone will be considered as cone 0)
-            vector<index_t> canNeighbors;
+            std::vector<index_t> canNeighbors;
 
             canonicalNeighborhood(canNeighbors, p, r, p_cone, DT, H, B);
             //assert(!canNeighbors.empty());
@@ -192,7 +190,7 @@ namespace spanner {
                 }
 
                 //End edges in the canonical neighborhood.
-                const vector<Edge> canExtrema{
+                const std::vector<Edge> canExtrema{
                         make_pair(canNeighbors.at(1), canNeighbors.front()),
                         make_pair(canNeighbors.at(canEdges - 1), canNeighbors.back())
                 };
@@ -206,7 +204,7 @@ namespace spanner {
                 }
 
                 //AlgorithmFirst and last edges in the canonical neighborhood are considered and added by 3 criteria. (4.4)
-                vector<cone_t> cone(6);
+                std::vector<cone_t> cone(6);
                 for (cone_t i = 0; i < 6; ++i) {
                     cone[i] = (p_cone + i) % 6;
                 }
@@ -223,9 +221,9 @@ namespace spanner {
                     }
                 }
 
-                const vector<PointConeMap::iterator> endpointZ{
-                        AL_e_a.find(make_pair(canExtrema[0].second, cone[2])),
-                        AL_e_a.find(make_pair(canExtrema[1].second, cone[4]))
+                const std::vector<PointConeMap::iterator> endpointZ{
+                        AL_e_a.find(std::make_pair(canExtrema[0].second, cone[2])),
+                        AL_e_a.find(std::make_pair(canExtrema[1].second, cone[4]))
                 };
                 const auto blank = AL_e_a.end(); //Iterator to end of map to check if an edge exists.
 
@@ -249,7 +247,7 @@ namespace spanner {
                     if (getCone(edge.second, edge.first, H) == cone[z_cone]
                         && endpointZ[i] != blank
                         && endpointZ[i]->second != edge.first) {
-                        vector<size_t> zCanNeighbors;
+                        std::vector<size_t> zCanNeighbors;
                         canonicalNeighborhood(
                                 zCanNeighbors, edge.second, endpointZ[i]->second,
                                 cone[z_cone], DT, H, B
@@ -270,16 +268,15 @@ namespace spanner {
     } // namespace BHS2018
 
 //Main algorithm.
-    template<typename RandomAccessIterator, typename OutputIterator>
-    void BHS2018(RandomAccessIterator pointsBegin, RandomAccessIterator pointsEnd, OutputIterator result) {
+    void BHS2018(const bdps::input_t &in, bdps::output_t &out) {
 
         using namespace bhs2017;
 
         //Angle of the cones. Results in 6 cones for a given vertex.
         //const number_t alpha = PI / 3;
 
-        vector<Point> P(pointsBegin, pointsEnd);
-        vector<index_t> index;
+        std::vector<Point> P(in);
+        std::vector<index_t> index;
         spatialSort<K>(P, index);
 
         //Step 1: Construct Delaunay triangulation
@@ -290,7 +287,7 @@ namespace spanner {
         if (n > SIZE_T_MAX - 1) return;
 
         //Stores all the vertex handles (CGAL's representation of a vertex, its properties, and data).
-        vector<VertexHandle> handles(n);
+        std::vector<VertexHandle> handles(n);
 
         /*Add IDs to the vertex handle. IDs are the number associated to the vertex, also maped as an index in handles.
           (i.e. Vertex with the ID of 10 will be in location [10] of handles.)*/
@@ -303,7 +300,7 @@ namespace spanner {
         }
 
         //Put edges in a vector.
-        vector<pair<Edge, number_t>> L;
+        std::vector<std::pair<Edge, number_t>> L;
 
         //Creates a map of edges as keys to its respective bisector length as the value. (Edges are not directional 1-2 is equivilent to 2-1)
         EdgeBisectorMap B(L.size());
@@ -324,7 +321,7 @@ namespace spanner {
             }
             //Timer t;
             //Step 2: Edges in the set L are sorted by their bisector length in non-decreasing order.
-            sort(L.begin(), L.end(), [&](const auto &lhs, const auto &rhs) {
+            std::sort(L.begin(), L.end(), [&](const auto &lhs, const auto &rhs) {
                 return lhs.second < rhs.second;
             });
         }
@@ -333,7 +330,7 @@ namespace spanner {
 
 
         //Creates a set which will contain all edges returned by addIncident.
-        vector<Edge> E_A;
+        std::vector<Edge> E_A;
 
         /*Creates an adjacency list where the inner lists are of size 6 representing the cones. The value stored in a particular inner index
           is the vertex that creates an edge with the outer vertex in the given cone. (i.e. If AL_E_A[10][4] = 5 in cone 4 of vertex 10 there
@@ -347,7 +344,7 @@ namespace spanner {
         }
 
         //Add canonical E_CAN
-        vector<Edge> E_CAN;
+        std::vector<Edge> E_CAN;
 
         //Step 4
         {
@@ -364,7 +361,7 @@ namespace spanner {
             //Timer t;
             //Union of sets E_A and E_CAN for final edge set removes duplicates.
             E_A.insert(E_A.end(), E_CAN.begin(), E_CAN.end());
-            sort(E_A.begin(), E_A.end(), [](const auto &l, const auto &r) {
+            std::sort(E_A.begin(), E_A.end(), [](const auto &l, const auto &r) {
                 return (CGAL::min(l.first, l.second) < min(r.first, r.second)
                         || (min(l.first, l.second) == min(r.first, r.second) &&
                             max(l.first, l.second) < max(r.first, r.second)));
@@ -379,7 +376,7 @@ namespace spanner {
         //vector<pair<Point,Point>> edgeList;
 
         // Send resultant graph to output iterator
-        std::copy(E_A.begin(), E_A.end(), result);
+        std::copy(E_A.begin(), E_A.end(), std::back_inserter(out));
 //        for (auto e : E_A) {
 //            // Edge list is only needed for printing. Remove for production.
 //            //edgeList.emplace_back(handles.at(e.first)->point(), handles.at(e.second)->point());

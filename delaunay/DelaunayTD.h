@@ -10,7 +10,9 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include "tools/Utilities.h"
+#include "constants.h"
+#include "types.h"
+#include "Utilities.h"
 
 namespace spanner {
 
@@ -23,7 +25,7 @@ namespace spanner {
 
 //Finds the cone of p containing vertex q, for this algorithm all vertices have 6 cones (0-5) with an getAngle of (PI/3).
         template<class Point_2>
-        cone_t getSingleCone(const index_t p, const index_t q, const vector <Point_2> &H) {
+        cone_t getSingleCone(const index_t p, const index_t q, const std::vector <Point_2> &H) {
             if (CGAL::compare_y(H[p], H[q]) == CGAL::EQUAL) {
                 return 1 + 3 * int(CGAL::compare_x(H[p], H[q]) == CGAL::LARGER);
             }
@@ -36,7 +38,7 @@ namespace spanner {
 
 //Compute max of getCone(p,q) and (getCone(q,p)+3)%6, is used to make sure cones are calculated correctly.
         template<class Point>
-        size_t getCone(const size_t p, const size_t q, const vector <Point> &H) {
+        size_t getCone(const size_t p, const size_t q, const std::vector <Point> &H) {
             return p < q ?
                    getSingleCone(p, q, H)
                          : (getSingleCone(q, p, H) + 3) % 6;
@@ -158,11 +160,11 @@ namespace spanner {
                 return td::getCone(p, q, _P);
             }
 
-            inline bool edgeExists(const pair <VertexDescriptor, VertexDescriptor> &e) const {
+            inline bool edgeExists(const std::pair <VertexDescriptor, VertexDescriptor> &e) const {
                 return boost::edge(e.first, e.second, _G).second;
             }
 
-            inline pair<pair<VertexDescriptor, VertexDescriptor>, bool>
+            inline std::pair<std::pair<VertexDescriptor, VertexDescriptor>, bool>
             eitherEdge(const VertexDescriptor &u, const VertexDescriptor &v) const {
                 auto orientedEdge = make_pair(u, v),
                         reversedEdge = reverse_pair(orientedEdge);

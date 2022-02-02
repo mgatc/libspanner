@@ -22,15 +22,13 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 //Project library
-#include "printers/GraphPrinter.h"
-#include "tools/Metrics.h"
-#include "tools/DelaunayTD.h"
-#include "tools/Utilities.h"
+#include "constants.h"
+#include "delaunay/DelaunayL2.h"
+#include "../bdps/types.h"
+#include "Utilities.h"
 
 
 namespace spanner {
-
-    using namespace std;
 
     namespace bghp2010 {
 
@@ -42,13 +40,12 @@ namespace spanner {
             LAST = -1
         };
 
-        template<class Container>
-        inline number_t getCanonicalAngle(const index_t p, const index_t q, const index_t r, const Container &P) {
+        inline number_t getCanonicalAngle(const index_t p, const index_t q, const index_t r, const bdps::input_t &P) {
             return CGAL::min(getAngle(p, q, r, P), getAngle(r, q, p, P));
         }
 
 //Finds the bisector length of a given edge.
-        inline number_t bisectorLength(const Edge &e, const vector<Point> &H) {
+        inline number_t bisectorLength(const Edge &e, const std::vector<Point> &H) {
             cone_t cone = td::getCone(e.first, e.second, H);
 
 //    //assert(cone<6);
@@ -76,9 +73,9 @@ namespace spanner {
             return ((i - 1 + 6) % 6);
         }
 
-        template<class KeyEdgesMap, class Triangulation, class PointContainer>
-        void findKeyEdges(KeyEdgesMap &KeyEdges, Triangulation &D, const PointContainer &P) {
-            typedef typename Triangulation::Edge_descriptor EdgeDescriptor;
+        template<class KeyEdgesMap>
+        void findKeyEdges(KeyEdgesMap &KeyEdges, DelaunayTD &D, const bdps::input_t &P) {
+            typedef DelaunayTD::Edge_descriptor EdgeDescriptor;
 
             // find closest in each cone
             for (auto vit = D.finite_vertices_begin();
@@ -86,7 +83,7 @@ namespace spanner {
                 auto w = *vit;
 
                 for (size_t cone = 1; cone < 6; cone += 2) {
-                    vector<EdgeDescriptor> fan;
+                    std::vector<EdgeDescriptor> fan;
                     D.fanOfCone(w, cone, fan);
 
                     // Find closest
@@ -95,7 +92,7 @@ namespace spanner {
 
                     for (auto e : fan) {
                         auto v = D.source(e);
-                        number_t length = bisectorLength(make_pair(w, v), P);
+                        number_t length = bisectorLength(std::make_pair(w, v), P);
                         if (length < closestKnownBisector) {
                             closestKnown = v;
                             closestKnownBisector = length;
@@ -107,7 +104,7 @@ namespace spanner {
                     }
 
                     // Find first and last
-                    if (fan.size() > 0) {
+                    if (!fan.empty()) {
                         KeyEdges[FIRST][w][flattenedCone] = D.source(fan.back());
                         KeyEdges[LAST][w][flattenedCone] = D.source(fan.front());
                     }
@@ -115,12 +112,12 @@ namespace spanner {
             }
         }
 
-        template<class PointContainer, class KeyEdgesContainer>
+        template<class KeyEdgesContainer>
         bool iRelevant(const VertexDescriptor child,
                        const VertexDescriptor parent,
                        const VertexDescriptor grandparent,
                        cone_t i,
-                       const PointContainer &P,
+                       const bdps::input_t &P,
                        KeyEdgesContainer &KeyEdges) {
             if (child == SIZE_T_MAX || grandparent == SIZE_T_MAX)
                 return false;
@@ -136,12 +133,12 @@ namespace spanner {
                        child != KeyEdges[CLOSEST][parent][iLessOne(i) / 2]);
         }
 
-        template<class Triangulation, class PointContainer, class EdgeList, class KeyEdgesContainer>
+        template<class EdgeList, class KeyEdgesContainer>
         bool iDistant(const VertexDescriptor w,
                       const cone_t i,
                       const size_t charge,
-                      Triangulation &D,
-                      const PointContainer &P,
+                      const DelaunayTD &D,
+                      const bdps::input_t &P,
                       const EdgeList &E,
                       KeyEdgesContainer &KeyEdges) {
             if (charge < 2)
@@ -154,49 +151,49 @@ namespace spanner {
             //cout<< "w:"<<w<<" u:"<<u<<" i:"<<i<< " first:"<<first<<" last:"<<last<<endl;
 
             //return false;
-            return !contains(E, make_pair(w, u))
+            return !contains(E, std::make_pair(w, u))
                    && iRelevant(first, w, u, iPlusOne(i), P, KeyEdges)
                    && iRelevant(last, w, u, iLessOne(i), P, KeyEdges);
         }
 
-        template<class AdjacencyList, class PointSet, class ChargeList, class EdgeList>
+        template<class AdjacencyList, class ChargeList, class EdgeList>
         void addClosestInNegativeCones(const AdjacencyList &ClosestEdges,
-                                       const PointSet &P,
+                                       const bdps::input_t &P,
                                        ChargeList &Charges,
                                        EdgeList &E,
                                        bool printLog) {
             const index_t n = P.size();
             // Add closest in each negative cone for each vertex
-            if (printLog) cout << "\nClosest\n";
+            if (printLog) std::cout << "\nClosest\n";
             for (index_t u = 0; u < n; ++u) {
                 for (auto v : ClosestEdges[u]) {
                     if (v != SIZE_T_MAX) {
                         cone_t cone = td::getCone(u, v, P);
-                        auto pair1 = make_pair(u, cone),
-                             pair2 = make_pair(v, (cone + 3) % 6);
+                        auto pair1 = std::make_pair(u, cone),
+                             pair2 = std::make_pair(v, (cone + 3) % 6);
                         Charges.try_emplace(pair1, 0);
                         Charges[pair1]++;
                         Charges.try_emplace(pair2, 0);
                         Charges[pair2]++;
 
                         E.emplace(u, v);
-                        if (printLog) cout << v << " " << u << "\n";
+                        if (printLog) std::cout << v << " " << u << "\n";
                     }
                 }
             }
         }
 
-        template<class KeyEdgeList, class PointSet, class Triangulation, class ChargeList, class EdgeList>
+        template<class KeyEdgeList, class ChargeList, class EdgeList>
         void add_iRelevantNeighbors(KeyEdgeList &KeyEdges,
-                                    const PointSet &P,
-                                    const Triangulation &D,
+                                    const bdps::input_t &P,
+                                    const DelaunayTD &D,
                                     ChargeList &Charges,
                                     EdgeList &E,
                                     bool printLog) {
             const index_t n = P.size();
 
             // Add first and last in each negative cone if it is (i+1)-relevant
-            if (printLog) cout << "\nFirst and AlgorithmLast\n";
+            if (printLog) std::cout << "\nFirst and AlgorithmLast\n";
             for (index_t u = 0; u < n; ++u) {
                 // get edges from positive cones
                 for (auto it = D.positive_cone_edges_begin(u);
@@ -214,22 +211,22 @@ namespace spanner {
                         if (iRelevant(w, u, v, posCone, P, KeyEdges)) {
 
                             //size_t cone = getCone( u, v, P );
-                            auto pair2 = make_pair(u, posCone);
+                            auto pair2 = std::make_pair(u, posCone);
                             Charges.try_emplace(pair2, 0);
                             Charges[pair2]++;
 
                             E.emplace(u, w);
-                            if (printLog) cout << w << " " << u << "\n";
+                            if (printLog) std::cout << w << " " << u << "\n";
                         }
                     }
                 }
             }
         }
 
-        template<class KeyEdgeList, class PointSet, class Triangulation, class ChargeList, class EdgeList>
+        template<class KeyEdgeList, class ChargeList, class EdgeList>
         void handle_iDistantCharge2s(KeyEdgeList &KeyEdges,
-                                     const PointSet &P,
-                                     const Triangulation &D,
+                                     const bdps::input_t &P,
+                                     const DelaunayTD &D,
                                      ChargeList &Charges,
                                      EdgeList &E) {
             //const size_t n = P.size();
@@ -249,13 +246,13 @@ namespace spanner {
                     VertexDescriptor u = D.parent(w, i);
                     auto thetaNext = getCanonicalAngle(w, u, next, P),
                             thetaPrev = getCanonicalAngle(w, u, prev, P);
-                    auto remove = make_pair(w, thetaNext > thetaPrev ? next : prev);
+                    auto remove = std::make_pair(w, thetaNext > thetaPrev ? next : prev);
                     //assert(contains(E, remove));
                     E.erase(remove);
 
                     // update charges
-                    auto nextCharge = make_pair(next, iPlusOne(i)),
-                            prevCharge = make_pair(prev, iLessOne(i));
+                    auto nextCharge = std::make_pair(next, iPlusOne(i)),
+                            prevCharge = std::make_pair(prev, iLessOne(i));
                     ++(Charges[nextCharge]);
                     ++(Charges[prevCharge]);
                     --charge;
@@ -263,9 +260,9 @@ namespace spanner {
             }
         }
 
-        template<class KeyEdgeList, class Triangulation, class ChargeList, class EdgeList>
+        template<class KeyEdgeList, class ChargeList, class EdgeList>
         void handleOtherCharge2s(KeyEdgeList &KeyEdges,
-                                 const Triangulation &D,
+                                 const DelaunayTD &D,
                                  ChargeList &Charges,
                                  EdgeList &E,
                                  bool printLog) {
@@ -278,21 +275,21 @@ namespace spanner {
                 cone_t i = cone.first.second;
                 size_t &charge = cone.second;
                 if (charge == 2
-                    && Charges[make_pair(w, iLessOne(i))] == 1
-                    && Charges[make_pair(w, iPlusOne(i))] == 1) {
+                    && Charges[std::make_pair(w, iLessOne(i))] == 1
+                    && Charges[std::make_pair(w, iPlusOne(i))] == 1) {
                     auto w_parent = D.parent(w, i);
                     if (w_parent == SIZE_T_MAX)
                         continue;
                     auto next = KeyEdges[FIRST][w][iPlusOne(i) / 2],
                             prev = KeyEdges[LAST][w][iLessOne(i) / 2];
 
-                    auto remove = make_pair(w, w == KeyEdges[LAST][w_parent][i] ? prev : next);
+                    auto remove = std::make_pair(w, w == KeyEdges[LAST][w_parent][i] ? prev : next);
 
                     //assert(contains(E, remove));
 
-                    if (printLog) cout << "Edge " << remove.first << "-" << remove.second << " ";
-                    if (printLog && !contains(E, remove)) cout << "not ";
-                    if (printLog) cout << "found\n";
+                    if (printLog) std::cout << "Edge " << remove.first << "-" << remove.second << " ";
+                    if (printLog && !contains(E, remove)) std::cout << "not ";
+                    if (printLog) std::cout << "found\n";
 
                     E.erase(remove);
 
@@ -306,29 +303,28 @@ namespace spanner {
 
 
 // Main algorithm.
-    template<typename RandomAccessIterator, typename OutputIterator>
-    void BGHP2010(RandomAccessIterator pointsBegin, RandomAccessIterator pointsEnd, OutputIterator result,
+    void BGHP2010(const bdps::input_t& in, bdps::output_t& out,
                   bool printLog = false) {
         using namespace bghp2010;
 
         // Step 1
-        const vector<Point> P(pointsBegin, pointsEnd);
+        const std::vector<Point> P(in);
         DelaunayTD D(P.begin(), P.end());
 
         {
             //Timer tim;
             const index_t n = D.number_of_vertices();
 
-            map<EdgeLabel, vector<vector<size_t>>> KeyEdges = {
-                    {CLOSEST, vector<vector<index_t>>(n, vector<index_t>(3, SIZE_T_MAX))},
-                    {FIRST,   vector<vector<index_t>>(n, vector<index_t>(3, SIZE_T_MAX))},
-                    {LAST,    vector<vector<index_t>>(n, vector<index_t>(3, SIZE_T_MAX))}
+            std::map<EdgeLabel, std::vector<std::vector<size_t>>> KeyEdges = {
+                    {CLOSEST, std::vector<std::vector<index_t>>(n, std::vector<index_t>(3, SIZE_T_MAX))},
+                    {FIRST,   std::vector<std::vector<index_t>>(n, std::vector<index_t>(3, SIZE_T_MAX))},
+                    {LAST,    std::vector<std::vector<index_t>>(n, std::vector<index_t>(3, SIZE_T_MAX))}
             };
 
             findKeyEdges(KeyEdges, D, P);
 
-            set<Edge> E;
-            map<pair<VertexDescriptor, size_t>, size_t> Charges;
+            std::set<Edge> E;
+            std::map<std::pair<VertexDescriptor, size_t>, size_t> Charges;
 
             // Step 2
             addClosestInNegativeCones(KeyEdges[CLOSEST], P, Charges, E, printLog);
@@ -338,12 +334,12 @@ namespace spanner {
             //      each negative (odd) cone should have at most 1 edge,
             //      each positive (even) cone should have at most 2 edges
 
-            if (printLog)cout << "\nCharges after step 2\n";
+            if (printLog) std::cout << "\nCharges after step 2\n";
             for (auto charge: Charges) {
                 cone_t cone = charge.first.second;
                 //
                 if (printLog)
-                         cout << charge.first.first << "  "
+                    std::cout << charge.first.first << "  "
                          << cone << "   "
                          << charge.second << "   "
                          << ((cone % 2 == 1 && charge.second <= 1)
@@ -357,10 +353,10 @@ namespace spanner {
             // Step 3
             handle_iDistantCharge2s(KeyEdges, P, D, Charges, E);
 
-            if (printLog)cout << "\nCharges after step 3\n";
+            if (printLog) std::cout << "\nCharges after step 3\n";
             for (auto charge: Charges) {
                 cone_t cone = charge.first.second;
-                if (printLog)cout << charge.first.first << "  " << cone << "   " << charge.second << "   "
+                if (printLog) std::cout << charge.first.first << "  " << cone << "   " << charge.second << "   "
                                   << ((cone % 2 == 1 && charge.second <= 1) || (cone % 2 == 0 && charge.second <= 2)
                                       ? "OK" : "FAIL") << "\n";
             }
@@ -370,19 +366,20 @@ namespace spanner {
 
             handleOtherCharge2s(KeyEdges, D, Charges, E, printLog);
 
-            if (printLog)cout << "\nCharges after step 4\n";
+            if (printLog) std::cout << "\nCharges after step 4\n";
             for (auto charge: Charges) {
                 cone_t cone = charge.first.second;
-                if (printLog)cout << charge.first.first << "  " << cone << "   " << charge.second << "   "
+                if (printLog) std::cout << charge.first.first << "  " << cone << "   " << charge.second << "   "
                                   << ((cone % 2 == 1 && charge.second <= 1) || (cone % 2 == 0 && charge.second <= 2)
                                       ? "OK" : "FAIL") << "\n";
             }
 
             // Send resultant graph to output iterator
-            for (auto e : E) {
-                *result = e;
-                ++result;
-            }
+            std::copy(E.begin(), E.end(), std::back_inserter(out));
+//            for (auto e : E) {
+//                *result = e;
+//                ++result;
+//            }
 
 
 

@@ -9,10 +9,11 @@
 
 #include <CGAL/algorithm.h>
 
-//#include "printers/GraphPrinter.h"
-#include "tools/DelaunayL2.h"
-#include "tools/Metrics.h"
-#include "tools/Utilities.h"
+#include "constants.h"
+#include "delaunay/DelaunayLinf.h"
+#include "../bdps/types.h"
+#include "Utilities.h"
+
 
 
 namespace spanner {

@@ -6,6 +6,7 @@
 #define LIBSPANNER_UTILITIES_H
 
 #include <boost/functional/hash.hpp> // hashing pairs
+#include <boost/heap/fibonacci_heap.hpp>
 #include <CGAL/Kernel/global_functions.h>
 #include <CGAL/point_generators_2.h>
 #include <CGAL/spatial_sort.h>
@@ -115,7 +116,7 @@ namespace spanner {
     }
     std::string to_string(mixed_t value) {
         std::ostringstream oss;
-        oss<<std::move(value);
+        oss<<value;
         return oss.str();
     }
 
@@ -179,7 +180,7 @@ namespace spanner {
             out << p << std::endl;
 
         out.close();
-        return points.size() > 0;
+        return points.empty();
     }
 
     template< class OutputIterator >
@@ -208,7 +209,7 @@ namespace spanner {
 //        std::copy_n( g3s, n/9, inserter(points) );
 //        std::copy_n( g4s, n/18, inserter(points) );
 
-        int remaining;
+        index_t remaining;
         while( (remaining = n - points.size()) > 0 ) {
             std::copy_n( g1, remaining, inserter(points) );
         }
@@ -356,10 +357,10 @@ namespace spanner {
         const index_t n = T.number_of_vertices();
 
         Heap H;
-        vector<HeapHandle> handleToHeap(n);
+        std::vector<HeapHandle> handleToHeap(n);
         //vector<size_t> piIndexedByV(n);
-        vector<index_t> ordering(n);
-        vector<unordered_set<index_t>> currentNeighbors(n);
+        std::vector<index_t> ordering(n);
+        std::vector<std::unordered_set<index_t>> currentNeighbors(n);
 
         // Initialize the vector currentNeighbors with appropriate neighbors for every vertex
         for (auto it = T.finite_vertices_begin();
@@ -389,7 +390,7 @@ namespace spanner {
             for (index_t neighbor : currentNeighbors.at(p.second)) {
                 currentNeighbors.at(neighbor).erase(p.second);
                 HeapHandle h = handleToHeap.at(neighbor);
-                index_tPair q = make_pair(currentNeighbors.at(neighbor).size(), neighbor);
+                index_tPair q = std::make_pair(currentNeighbors.at(neighbor).size(), neighbor);
                 H.update(h, q);
                 H.update(h);
             }
@@ -431,13 +432,13 @@ namespace spanner {
         //Timer t(",");
         typedef typename DelaunayTriangulation::Vertex_handle VertexHandle;
         typedef typename DelaunayTriangulation::Vertex_circulator VertexCirculator;
-        typedef unordered_set<VertexHandle> VertexHash;
+        typedef std::unordered_set<VertexHandle> VertexHash;
 
         VertexHash onOuterFace, complete;
-        queue<VertexHandle> ready;
+        std::queue<VertexHandle> ready;
         index_t i = DT.number_of_vertices();
 
-        vector<VertexHandle> ordering(i);
+        std::vector<VertexHandle> ordering(i);
 
         VertexCirculator v_convexHull = DT.incident_vertices(DT.infinite_vertex() ), // create a circulator of the convex hull
         done(v_convexHull );

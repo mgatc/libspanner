@@ -12,9 +12,10 @@
 #include <utility>
 #include <vector>
 
-#include "printers/GraphPrinter.h"
-#include "tools/DelaunayL2.h"
-#include "tools/Metrics.h"
+#include "constants.h"
+#include "delaunay/DelaunayL2.h"
+#include "../bdps/types.h"
+#include "Utilities.h"
 
 namespace spanner {
 
@@ -652,19 +653,20 @@ void PolygonSpanner( DelaunayGraph& SG, SplitVertexSet& V, SplitVertexEdgeMap& E
 } // namespace bgs2005
 
 
-template< typename RandomAccessIterator, typename OutputIterator >
-void BGS2005( RandomAccessIterator pointsBegin, RandomAccessIterator pointsEnd, OutputIterator result) {
+void BGS2005(const bdps::input_t &in, bdps::output_t out) {
     using namespace bgs2005;
 
-    DelaunayGraph G( pointsBegin, pointsEnd ); // Step 1
+    DelaunayGraph G(in.begin(), in.end()); // Step 1
 
-    SpanningGraph( G ); // Step 2
+    SpanningGraph(G); // Step 2
 
     SplitVertexSet V;
     SplitVertexEdgeMap P;
-    TransformPolygon( G, V, P ); // Step 3
+    TransformPolygon(G, V, P); // Step 3
 
-    PolygonSpanner( G, V, P ); // Step 4
+    PolygonSpanner(G, V, P); // Step 4
+
+    auto result = std::back_inserter(out);
 
     // send resulting edge list to output iterator
     for( auto const& adj : G.m_E ) {
