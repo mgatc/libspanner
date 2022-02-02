@@ -36,8 +36,8 @@ namespace spanner {
         Degree3,
         AlgorithmLast
     };
-    const string ALGORITHM_SYMBOL = "Algorithm";
-    const vector<string> ALGORITHM_NAMES = {
+    const std::string ALGORITHM_SYMBOL = "Algorithm";
+    const std::vector<std::string> ALGORITHM_NAMES = {
 //            "BGS2005",
 //            "LW2004",
 //            "BSX2009",
@@ -51,16 +51,16 @@ namespace spanner {
 //            "KPT2017",
             "Degree3"
     };
-    const string DEGREE_BOUND_SYMBOL = "$\\k$";
-    const vector<string> DEGREE_BOUND_PER_ALGORITHM = {
+    const std::string DEGREE_BOUND_SYMBOL = "$\\k$";
+    const std::vector<std::string> DEGREE_BOUND_PER_ALGORITHM = {
 //            "27",
 //            "23", "17", "14", "11", "8", "7", "6", "6",
             "4",
 //            "4",
             "3"
     };
-    const string STRETCH_FACTOR_BOUND_SYMBOL = "$t_{\\mathrm{ub}}$";
-    const vector<string> STRETCH_FACTOR_BOUND_PER_ALGORITHM = {
+    const std::string STRETCH_FACTOR_BOUND_SYMBOL = "$t_{\\mathrm{ub}}$";
+    const std::vector<std::string> STRETCH_FACTOR_BOUND_PER_ALGORITHM = {
 //            "8.27",
 //            "6.44", "23.6", "2.92", "2.86", "4.41", "11.7", "81.7", "6",
             "157" ,

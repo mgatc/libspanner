@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "../types.h"
 
 namespace spanner {
 
@@ -14,5 +15,6 @@ namespace spanner {
         typedef std::vector<Point> input_t;
         typedef std::vector<Edge> output_t;
     }
+}
 
 #endif //LIBSPANNER_TYPES_H
