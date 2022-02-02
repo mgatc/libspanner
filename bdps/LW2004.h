@@ -7,7 +7,7 @@
 #include <vector> // vertex containers
 
 #include "constants.h"
-#include "delaunay/DelaunayLinf.h"
+#include "delaunay/DelaunayL2.h"
 #include "../bdps/types.h"
 #include "Utilities.h"
 
@@ -15,11 +15,7 @@
 
 namespace spanner {
 
-using namespace std;
-
 namespace lw2004 {
-
-using namespace CGAL;
 
 inline Edge createEdge(const size_t i, const size_t j )
 {

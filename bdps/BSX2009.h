@@ -6,7 +6,7 @@
 #include <vector> // vertex containers
 
 #include "constants.h"
-#include "delaunay/DelaunayLinf.h"
+#include "delaunay/DelaunayL2.h"
 #include "../bdps/types.h"
 #include "Utilities.h"
 
@@ -33,10 +33,7 @@ inline bool createNewEdge(//const DelaunayL2& T,
 
 } // namespace bsx2009
 
-template< typename RandomAccessIterator, typename OutputIterator >
-void BSX2009( RandomAccessIterator pointsBegin,
-              RandomAccessIterator pointsEnd,
-              OutputIterator result,
+void BSX2009(const bdps::input_t& in, bdps::output_t& out,
               number_t alpha = 2*PI/3) {
     using namespace bsx2009;
 
@@ -47,7 +44,7 @@ void BSX2009( RandomAccessIterator pointsBegin,
     auto alphaReal =2*PI / number_t(numCones);
     //cone_t FINAL_DEGREE_BOUND = 14 + numCones;
 
-    vector<Point> P(pointsBegin, pointsEnd);
+    vector<Point> P(in);
     vector<index_t> index;
     spatialSort<K>(P, index);
 
@@ -110,7 +107,7 @@ void BSX2009( RandomAccessIterator pointsBegin,
 
         do { // Find closest unprocessed neighbor, also count processed neighbors and neighbors in ePrime
             if( !T.is_infinite(N) ) {
-                if( spanners::contains(ePrime, makeNormalizedPair(u, N->info() ) ) )
+                if( spanner::contains(ePrime, makeNormalizedPair(u, N->info() ) ) )
                     ++degree;
 
                 if( isProcessed.at( N->info() ) )

@@ -23,7 +23,7 @@
 
 //Project library
 #include "constants.h"
-#include "delaunay/DelaunayL2.h"
+#include "delaunay/DelaunayTD.h"
 #include "../bdps/types.h"
 #include "Utilities.h"
 

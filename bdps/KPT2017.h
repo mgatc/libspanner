@@ -14,7 +14,7 @@
 
 //Project library
 #include "constants.h"
-#include "delaunay/DelaunayLinf.h"
+#include "delaunay/DelaunayTD.h"
 #include "../bdps/types.h"
 #include "Utilities.h"
 
@@ -402,13 +402,10 @@ namespace spanner {
 
 
 // Main algorithm.
-    template<typename RandomAccessIterator, typename OutputIterator>
-    void KPT2017(RandomAccessIterator pointsBegin,
-                 RandomAccessIterator pointsEnd,
-                 OutputIterator result) {
+    void KPT2017(const bdps::input_t& in, bdps::output_t& out) {
         using namespace kpt2017;
 
-        vector<Point> P(pointsBegin, pointsEnd);
+        vector<Point> P(in);
 
         DelaunayTD D(P.begin(), P.end());
         {

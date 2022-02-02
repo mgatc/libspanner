@@ -712,7 +712,6 @@ namespace spanner {
     }
 
 
-    template<typename RandomAccessIterator, typename OutputIterator>
     void BKPX2015(const bdps::input_t &in, bdps::output_t &out) {
 
         using namespace bkpx2015;

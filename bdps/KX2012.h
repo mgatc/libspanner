@@ -16,14 +16,13 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 #include "constants.h"
-#include "delaunay/DelaunayLinf.h"
+#include "delaunay/DelaunayL2.h"
 #include "../bdps/types.h"
 #include "Utilities.h"
 
 
 namespace spanner {
 
-    using namespace std;
 
     namespace kx2012 {
 
@@ -46,16 +45,16 @@ namespace spanner {
     } // namespace kx2012
 
     template<typename RandomAccessIterator, typename OutputIterator>
-    void KX2012(RandomAccessIterator pointsBegin, RandomAccessIterator pointsEnd, OutputIterator result,
+    void KX2012(const bdps::input_t& in, bdps::output_t& out,
                 bool printLog = false) {
         using namespace kx2012;
-        using spanners::contains;
+        using spanner::contains;
 
         //if(printLog) cout<<"alpha:"<<alpha<<",";
 
         // Construct Delaunay triangulation
 
-        vector<Point> P(pointsBegin, pointsEnd);
+        vector<Point> P(in);
         vector<index_t> index;
         spatialSort<K>(P, index);
 

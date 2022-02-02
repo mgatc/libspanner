@@ -1433,15 +1433,15 @@ namespace spanner {
 
 
 
-    template<typename RandomAccessIterator, typename OutputIterator>
-    void DEG3(RandomAccessIterator pointsBegin, RandomAccessIterator pointsEnd, OutputIterator result, bool printLog = false) {
+
+    void DEG3(const bdps::input_t& in, bdps::output_t& out, bool printLog = false) {
 
         using namespace degree3;
 
         using degree3::VertexHandle, degree3::VertexCirculator, degree3::FaceHandle;
 
         // construct Linf Delaunay triangulation
-        vector<Point> P(pointsBegin, pointsEnd);
+        vector<Point> P(in);
         vector<size_t> index;
         spatialSort<K>(P, index);
         LinfDelaunayGraph DT;

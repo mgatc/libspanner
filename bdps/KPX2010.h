@@ -10,7 +10,7 @@
 #include <CGAL/algorithm.h>
 
 #include "constants.h"
-#include "delaunay/DelaunayLinf.h"
+#include "delaunay/DelaunayL2.h"
 #include "../bdps/types.h"
 #include "Utilities.h"
 
@@ -36,8 +36,8 @@ bool selectEdge(index_tPairMap &E, const VertexHandle& i, const VertexHandle& j 
 
 } // namespace kpx2010
 
-template< typename RandomAccessIterator, typename OutputIterator >
-void KPX2010( RandomAccessIterator pointsBegin, RandomAccessIterator pointsEnd, OutputIterator result, cone_t k=14 ) {
+void KPX2010( const bdps::input_t& in, bdps::output_t& out,
+              cone_t k=14 ) {
     using namespace kpx2010;
 
     // ensure k >= 14
@@ -48,7 +48,7 @@ void KPX2010( RandomAccessIterator pointsBegin, RandomAccessIterator pointsEnd, 
 
     // Construct Delaunay triangulation
 
-    vector<Point> P(pointsBegin, pointsEnd);
+    vector<Point> P(in);
     vector<index_t> index;
     spatialSort<K>(P, index);
 
