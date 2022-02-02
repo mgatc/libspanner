@@ -18,8 +18,6 @@
 
 namespace spanner {
 
-using namespace std;
-
 namespace kpx2010 {
 
 bool selectEdge(index_tPairMap &E, const VertexHandle& i, const VertexHandle& j ) {
@@ -48,8 +46,8 @@ void KPX2010( const bdps::input_t& in, bdps::output_t& out,
 
     // Construct Delaunay triangulation
 
-    vector<Point> P(in);
-    vector<index_t> index;
+    std::vector<Point> P(in);
+    std::vector<index_t> index;
     spatialSort<K>(P, index);
 
     //Step 1: Construct Delaunay triangulation
@@ -60,7 +58,7 @@ void KPX2010( const bdps::input_t& in, bdps::output_t& out,
     if(n > SIZE_T_MAX - 1) return;
 
     //Stores all the vertex handles (CGAL's representation of a vertex, its properties, and data).
-    vector<VertexHandle> handles(n);
+    std::vector<VertexHandle> handles(n);
 
     /*Add IDs to the vertex handle. IDs are the number associated to the vertex, also maped as an index in handles.
       (i.e. Vertex with the ID of 10 will be in location [10] of handles.)*/
@@ -90,9 +88,9 @@ void KPX2010( const bdps::input_t& in, bdps::output_t& out,
         //if(printLog) cout<<"done:"<<done->info()<<",";
 
         // closest vertex in each cone
-        vector<VertexHandle> closestInCones(k, v_inf );
+        std::vector<VertexHandle> closestInCones(k, v_inf );
         // Now, let's put the neighbors found so far into a hashed set for quick lookup
-        unordered_set<VertexHandle> selected(k);
+        std::unordered_set<VertexHandle> selected(k);
 
         do { // Loop through neighbors and consider forward edges
             if( !T.is_infinite(N) ) {
@@ -125,7 +123,7 @@ void KPX2010( const bdps::input_t& in, bdps::output_t& out,
         size_t l_local = 0; // size of current empty sequence
         size_t offset = 0; // offset in case an empty set "wraps" through the end and start of the vector
         size_t startOfSequence = 0; // start of current empty sequence
-        unordered_set<size_t> startOfMaximalSequences(k/2);
+        std::unordered_set<size_t> startOfMaximalSequences(k/2);
 
         for( size_t i=0; i<(k+offset); ++i ) {
             //if(printLog) cout<<"i:"<<i<<",";
@@ -234,6 +232,7 @@ void KPX2010( const bdps::input_t& in, bdps::output_t& out,
     }
 
     // Send resultant graph to output iterator
+    auto result = std::back_inserter(out);
     for( auto e : G_prime ) {
         if( e.second ) { // e.second holds the bool value of whether both vertices of an edge selected the edge
             *result = e.first;

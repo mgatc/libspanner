@@ -308,7 +308,7 @@ namespace spanner {
         using namespace bghp2010;
 
         // Step 1
-        const std::vector<Point> P(in);
+        bdps::input_t P(in);
         DelaunayTD D(P.begin(), P.end());
 
         {

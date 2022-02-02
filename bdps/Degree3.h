@@ -39,62 +39,57 @@
 
 namespace spanner {
 
-
-
-    using namespace std;
-
     namespace degree3 {
 
         const number_t MAX_STRETCH_CONSTRAINT = 1000.0;
-
-        typedef size_t id_type;
-
-        template<typename T>
-        struct InfoConvert
-        {
-            typedef T Info;
-            typedef const Info& result_type;
-
-            inline const Info& operator()(const Info& info0, bool) const {
-                // just return the info of the supporting segment
-                return info0;
-            }
-            inline const Info& operator()(const Info& info0, const Info& , bool) const {
-                // just return the info of the supporting segment
-                return info0;
-            }
-        };
-        // functor that defines how to merge color info when a site (either
-        // point or segment) corresponds to point(s) on plane belonging to
-        // more than one input site
-        template<typename T>
-        struct InfoMerge
-        {
-            typedef T    Info;
-            typedef Info result_type;
-
-            inline Info operator()(const Info& info0, const Info& info1) const {
-                // just return the info of the supporting segment
-                return info0;
-            }
-        };
-
-        typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-        typedef CGAL::Segment_Delaunay_graph_Linf_filtered_traits_2<K,CGAL::Field_with_sqrt_tag>  Gt;
-        typedef CGAL::Segment_Delaunay_graph_storage_traits_with_info_2<Gt,
-                index_t,
-                InfoConvert<index_t>,
-                InfoMerge<index_t>> StorageTraits;
-        typedef CGAL::Segment_Delaunay_graph_Linf_2<Gt, StorageTraits> LinfDelaunayGraph;
-        typedef LinfDelaunayGraph::Site_2 Site;
-        typedef Site::Point_2 Point;
-        typedef LinfDelaunayGraph::Vertex_circulator VertexCirculator;
+//
+//        typedef size_t id_type;
+//
+//        template<typename T>
+//        struct InfoConvert
+//        {
+//            typedef T Info;
+//            typedef const Info& result_type;
+//
+//            inline const Info& operator()(const Info& info0, bool) const {
+//                // just return the info of the supporting segment
+//                return info0;
+//            }
+//            inline const Info& operator()(const Info& info0, const Info& , bool) const {
+//                // just return the info of the supporting segment
+//                return info0;
+//            }
+//        };
+//        // functor that defines how to merge color info when a site (either
+//        // point or segment) corresponds to point(s) on plane belonging to
+//        // more than one input site
+//        template<typename T>
+//        struct InfoMerge
+//        {
+//            typedef T    Info;
+//            typedef Info result_type;
+//
+//            inline Info operator()(const Info& info0, const Info& info1) const {
+//                // just return the info of the supporting segment
+//                return info0;
+//            }
+//        };
+//
+//        typedef CGAL::Segment_Delaunay_graph_Linf_filtered_traits_2<K,CGAL::Field_with_sqrt_tag>  Gt;
+//        typedef CGAL::Segment_Delaunay_graph_storage_traits_with_info_2<Gt,
+//                index_t,
+//                InfoConvert<index_t>,
+//                InfoMerge<index_t>> StorageTraits;
+//        typedef CGAL::Segment_Delaunay_graph_Linf_2<Gt, StorageTraits> LinfDelaunayGraph;
+//        typedef LinfDelaunayGraph::Site_2 Site;
+//        typedef Site::Point_2 Point;
+        typedef DelaunayLinf::Vertex_circulator VertexCirculator;
         //typedef DelaunayLinf::Edge LinfEdge;
-        typedef LinfDelaunayGraph::Vertex_handle VertexHandle;
-        typedef LinfDelaunayGraph::Face_handle FaceHandle;
+        typedef DelaunayLinf::Vertex_handle VertexHandle;
+        typedef DelaunayLinf::Face_handle FaceHandle;
 
-        typedef CGAL::Spatial_sort_traits_adapter_2<K,
-                CGAL::Pointer_property_map<Point>::type> SearchTraits;
+//        typedef CGAL::Spatial_sort_traits_adapter_2<K,
+//                CGAL::Pointer_property_map<Point>::type> SearchTraits;
 
 
         enum AnchorType {
@@ -102,12 +97,12 @@ namespace spanner {
         };
 
         // project objects
-        typedef vector<pair<VertexHandle, VertexHandle>> FanCones;
-        typedef vector<pair<VertexHandle, index_t>> YaoCones;
-        typedef vector<size_t> NumYaoEdges;
-        typedef vector<pair<VertexHandle, AnchorType>> AnchorCones;
-        typedef pair<VertexHandle, VertexHandle> SpannerEdge;
-        typedef vector<vector<SpannerEdge>> SpannerCones;
+        typedef std::vector<std::pair<VertexHandle, VertexHandle>> FanCones;
+        typedef std::vector<std::pair<VertexHandle, index_t>> YaoCones;
+        typedef std::vector<size_t> NumYaoEdges;
+        typedef std::vector<std::pair<VertexHandle, AnchorType>> AnchorCones;
+        typedef std::pair<VertexHandle, VertexHandle> SpannerEdge;
+        typedef std::vector<std::vector<SpannerEdge>> SpannerCones;
 
         // inline functions required for bkpx2015
 
@@ -128,14 +123,14 @@ namespace spanner {
         }
 
         // add yao edges
-        void addYaoEdges(vector<YaoCones> &yaoEdges,
-                         vector<FanCones> &pointFans,
-                         vector<NumYaoEdges> &yaoEdgeCount,
-                         const vector<VertexHandle> &handles,
-                         const LinfDelaunayGraph &DT) {
+        void addYaoEdges(std::vector<YaoCones> &yaoEdges,
+                         std::vector<FanCones> &pointFans,
+                         std::vector<NumYaoEdges> &yaoEdgeCount,
+                         const std::vector<VertexHandle> &handles,
+                         const DelaunayLinf &DT) {
 
             VertexCirculator circ = DT.incident_vertices(handles[0]); // default value
-            vector<number_t> distances(4);
+            std::vector<number_t> distances(4);
 
             cone_t cone = 0;
             index_t index = 0;
@@ -223,12 +218,12 @@ namespace spanner {
         }
 
 
-        void determineAnchors(vector<AnchorCones> &anchorEdges,
-                              vector<YaoCones> &yaoEdges,
-                              vector<FanCones> &pointFans,
-                              vector<NumYaoEdges> &yaoEdgeCount,
-                              vector<VertexHandle> &handles,
-                              LinfDelaunayGraph &DT) {
+        void determineAnchors(std::vector<AnchorCones> &anchorEdges,
+                              std::vector<YaoCones> &yaoEdges,
+                              std::vector<FanCones> &pointFans,
+                              std::vector<NumYaoEdges> &yaoEdgeCount,
+                              std::vector<VertexHandle> &handles,
+                              DelaunayLinf &DT) {
 
             for (const auto &u : handles) {
 
@@ -370,7 +365,7 @@ namespace spanner {
 
                         if (found) { continue; }
 
-                        vector<VertexHandle> visited;
+                        std::vector<VertexHandle> visited;
                         auto previous = u;
                         auto current = anchorEdges[u_id][cone].first;
                         index_t previous_id = u_id;
@@ -423,7 +418,7 @@ namespace spanner {
             }
         } // function Complete
 
-        bool inEdgeList(const vector<SpannerEdge> &edgeList,
+        bool inEdgeList(const std::vector<SpannerEdge> &edgeList,
                         const VertexHandle u,
                         const VertexHandle v) {
 
@@ -433,13 +428,13 @@ namespace spanner {
         }
 
 
-        void degreeEightSpanner(vector<SpannerCones> &H8,
-                                vector<AnchorCones> &anchorEdges,
-                                vector<YaoCones> &yaoEdges,
-                                vector<FanCones> &pointFans,
-                                vector<NumYaoEdges> &yaoEdgeCount,
-                                vector<VertexHandle> &handles,
-                                LinfDelaunayGraph &DT) {
+        void degreeEightSpanner(std::vector<SpannerCones> &H8,
+                                std::vector<AnchorCones> &anchorEdges,
+                                std::vector<YaoCones> &yaoEdges,
+                                std::vector<FanCones> &pointFans,
+                                std::vector<NumYaoEdges> &yaoEdgeCount,
+                                std::vector<VertexHandle> &handles,
+                                DelaunayLinf &DT) {
             // put the edges conal vector
             for (const auto &w : handles) {
                 SpannerCones edges(4);
@@ -568,12 +563,12 @@ namespace spanner {
         }
 
 
-        void processSpanner(vector<SpannerCones> &H8,
-                            const vector<AnchorCones> &anchorEdges,
-                            const vector<YaoCones> &yaoEdges,
-                            const vector<FanCones> &pointFans,
-                            const vector<VertexHandle> &handles,
-                            const LinfDelaunayGraph &DT) {
+        void processSpanner(std::vector<SpannerCones> &H8,
+                            const std::vector<AnchorCones> &anchorEdges,
+                            const std::vector<YaoCones> &yaoEdges,
+                            const std::vector<FanCones> &pointFans,
+                            const std::vector<VertexHandle> &handles,
+                            const DelaunayLinf &DT) {
 
             for (const auto &u : handles) {
 
@@ -609,7 +604,7 @@ namespace spanner {
                             if (inEdgeList(H8[target_id][localCone], source, target) &&
                                 H8[target_id][localCone].size() == 2) {
 
-                                vector<VertexHandle> visited;
+                                std::vector<VertexHandle> visited;
                                 auto previous = source;
                                 index_t previous_id = previous->storage_site().info();
                                 auto current = target;
@@ -845,9 +840,9 @@ namespace spanner {
         };
 
         template< typename VertexContainer >
-        optional<number_t> AStar( VertexContainer V, vector<SpannerCones> &H8, index_t start, index_t goal, number_t stretchBound ) {
+        std::optional<number_t> AStar( VertexContainer V, std::vector<SpannerCones> &H8, index_t start, index_t goal, number_t stretchBound ) {
 
-            typedef pair<number_t,index_t>
+            typedef std::pair<number_t,index_t>
                     DistanceIndexPair;
             typedef boost::heap::fibonacci_heap< DistanceIndexPair,boost::heap::compare<MinHeapCompare<DistanceIndexPair>>>
                     Heap;
@@ -860,16 +855,16 @@ namespace spanner {
             EuclideanDistanceToPoint h ( goalPoint ); // initialize heuristic functor
 
             Heap open;
-            unordered_map<index_t,HeapHandle> handleToHeap(n);
+            std::unordered_map<index_t,HeapHandle> handleToHeap(n);
             handleToHeap[start] = open.emplace( h( startPoint ), start );
 
             //unordered_set<size_t> closed(n);
-            vector<index_t> parents(n);
+            std::vector<index_t> parents(n);
 
-            vector<number_t> g( n, INF );
+            std::vector<number_t> g( n, INF );
             g[start] = 0;
 
-            vector<number_t> f( n, INF );
+            std::vector<number_t> f( n, INF );
             f[start] = h( startPoint );
 
             number_t baseEuclidean = f[start];
@@ -889,10 +884,10 @@ namespace spanner {
                 number_t currentStretch = f.at(u_index) / baseEuclidean;
 
                 if (currentStretch > stretchBound)
-                    return nullopt;
+                    return std::nullopt;
 
 
-                if( u_index == goal ) return make_optional( g.at(goal) / baseEuclidean);
+                if( u_index == goal ) return std::make_optional( g.at(goal) / baseEuclidean);
 
                 for(auto cone : H8[u_index]) {
 
@@ -913,7 +908,7 @@ namespace spanner {
                             parents[neighbor] = u_index;
                             g[neighbor] = newScore;
                             f[neighbor] = g.at(neighbor) + h(neighborPoint);
-                            DistanceIndexPair q = make_pair( f.at(neighbor), neighbor );
+                            DistanceIndexPair q = std::make_pair( f.at(neighbor), neighbor );
 
                             if( contains( handleToHeap, neighbor ) ) {
                                 HeapHandle neighborHandle = handleToHeap.at(neighbor);
@@ -928,20 +923,22 @@ namespace spanner {
 
             } while( !open.empty() );
 
-            return nullopt;
+            return std::nullopt;
         }
 
-        void decreaseDegree(vector<SpannerCones> &H8,
-                            const vector<AnchorCones> &anchorEdges,
-                            const vector<YaoCones> &yaoEdges, const vector<FanCones> &pointFans,
-                            const vector<NumYaoEdges> &yaoEdgeCount, const vector<VertexHandle> &handles,
-                            const LinfDelaunayGraph &DT,
+        void decreaseDegree(std::vector<SpannerCones> &H8,
+                            const std::vector<AnchorCones> &anchorEdges,
+                            const std::vector<YaoCones> &yaoEdges,
+                            const std::vector<FanCones> &pointFans,
+                            const std::vector<NumYaoEdges> &yaoEdgeCount,
+                            const std::vector<VertexHandle> &handles,
+                            const DelaunayLinf &DT,
                             const VertexHandle u) {
 
             index_t u_id = u->storage_site().info();
 
             number_t stretchBound = MAX_STRETCH_CONSTRAINT;
-            optional<SpannerEdge> candidateRemove = nullopt;
+            std::optional<SpannerEdge> candidateRemove = std::nullopt;
 
             for (cone_t cone = 0; cone < 4; cone++) {
 
@@ -990,7 +987,7 @@ namespace spanner {
 
             else {
 
-                optional<SpannerEdge> candidateAdd = nullopt;
+                std::optional<SpannerEdge> candidateAdd = std::nullopt;
                 number_t stretchBound = MAX_STRETCH_CONSTRAINT;
 
 
@@ -1009,7 +1006,7 @@ namespace spanner {
                     if (DT.is_infinite(middle)) {++middle;}
                     auto endpt = middle;
 
-                    optional<number_t> stretch = nullopt;
+                    std::optional<number_t> stretch = std::nullopt;
 
                     do {
 
@@ -1124,11 +1121,11 @@ namespace spanner {
             }
         }
 
-        void degree3fromH4(vector<SpannerCones> &H8,
-                           const vector<AnchorCones> &anchorEdges,
-                           const vector<YaoCones> &yaoEdges, const vector<FanCones> &pointFans,
-                           const vector<NumYaoEdges> &yaoEdgeCount, const vector<VertexHandle> &handles,
-                           const LinfDelaunayGraph &DT) {
+        void degree3fromH4(std::vector<SpannerCones> &H8,
+                           const std::vector<AnchorCones> &anchorEdges,
+                           const std::vector<YaoCones> &yaoEdges, const std::vector<FanCones> &pointFans,
+                           const std::vector<NumYaoEdges> &yaoEdgeCount, const std::vector<VertexHandle> &handles,
+                           const DelaunayLinf &DT) {
 
             for (const auto &u : handles) {
 
@@ -1341,7 +1338,7 @@ namespace spanner {
                     index_t v_id = v->storage_site().info();
                     number_t min_distance = INF;
 
-                    optional<VertexHandle> optimal = nullopt;
+                    std::optional<VertexHandle> optimal = std::nullopt;
 
                     bool found = false;
                     auto endpt = v;
@@ -1401,7 +1398,7 @@ namespace spanner {
 
                                     found = true;
                                     min_distance = v_distance;
-                                    optimal = make_optional(v);
+                                    optimal = std::make_optional(v);
 
                                 }
                             }
@@ -1441,38 +1438,38 @@ namespace spanner {
         using degree3::VertexHandle, degree3::VertexCirculator, degree3::FaceHandle;
 
         // construct Linf Delaunay triangulation
-        vector<Point> P(in);
-        vector<size_t> index;
+        std::vector<Point> P(in);
+        std::vector<size_t> index;
         spatialSort<K>(P, index);
-        LinfDelaunayGraph DT;
-        Site site;
+        DelaunayLinf DT;
+        DelaunayLinf::Site_2 site;
         index_t id = 0;
 
         // store the vertex handles
         const size_t n = P.size();
-        vector<VertexHandle> handles(n);
+        std::vector<VertexHandle> handles(n);
 
         //FaceHandle hint;
         for (size_t entry : index) {
             Point p = P[entry];
-            site = Site::construct_site_2(p);
+            site = DelaunayLinf::Site_2::construct_site_2(p);
             auto vh = DT.insert(site, entry);
             //hint = vh->face();
             //vh->storage_site().info() = entry;
             handles[entry] = vh;
         }
         //construct YaoEdges
-        vector<YaoCones> yaoEdges(n, YaoCones(4));
-        vector<FanCones> pointFans(n, FanCones(4));
-        vector<NumYaoEdges> yaoEdgeCount(n, NumYaoEdges(4));
+        std::vector<YaoCones> yaoEdges(n, YaoCones(4));
+        std::vector<FanCones> pointFans(n, FanCones(4));
+        std::vector<NumYaoEdges> yaoEdgeCount(n, NumYaoEdges(4));
         addYaoEdges(yaoEdges, pointFans, yaoEdgeCount, handles, DT);
 
         // identify the anchors
-        vector<AnchorCones> anchorEdges(n, AnchorCones(4, std::make_pair(DT.infinite_vertex(), None)));
+        std::vector<AnchorCones> anchorEdges(n, AnchorCones(4, std::make_pair(DT.infinite_vertex(), None)));
         determineAnchors(anchorEdges, yaoEdges, pointFans, yaoEdgeCount, handles, DT);
 
         // construct H8 --> degree 8 spanner
-        vector<SpannerCones> H8(n, SpannerCones(4));
+        std::vector<SpannerCones> H8(n, SpannerCones(4));
         degreeEightSpanner(H8, anchorEdges, yaoEdges, pointFans, yaoEdgeCount, handles, DT);
 
         // prune edges from H8 to produce H4 --> degree 4 spanner
@@ -1481,7 +1478,7 @@ namespace spanner {
         // produce degree 3 spanner from H4
         degree3fromH4(H8, anchorEdges, yaoEdges, pointFans, yaoEdgeCount, handles, DT);
 
-        vector<index_tPair> edgeList;
+        std::vector<index_tPair> edgeList;
 
         for (const auto &u : handles) {
             for (size_t cone = 0; cone < 4; cone++) {
@@ -1492,12 +1489,7 @@ namespace spanner {
             }
         }
 
-        // Send resultant graph to output iterator
-        for (auto e : edgeList) {
-            *result = e;
-            ++result;
-        }
-
+        std::copy(edgeList.begin(), edgeList.end(), std::back_inserter(out));
     }
 
 

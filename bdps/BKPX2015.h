@@ -719,7 +719,7 @@ namespace spanner {
         using bkpx2015::VertexHandle, bkpx2015::VertexCirculator, bkpx2015::FaceHandle;
 
         // construct Linf Delaunay triangulation
-        std::vector<Point> P(in);
+        bdps::input_t P(in);
         std::vector<size_t> index;
         spatialSort<K>(P, index);
         DelaunayLinf DT;

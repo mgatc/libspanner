@@ -56,7 +56,7 @@ struct SplitVertex {
     }
 };
 
-ostream& operator<<( ostream& os, const SplitVertex& v ){
+std::ostream& operator<<( std::ostream& os, const SplitVertex& v ){
     os << v.v->point() << " (" << v.s_1_handle->point() << ")";
     return os;
 }
@@ -85,7 +85,7 @@ typedef std::unordered_map< index_t, IncidentSplitVertexContainer > SplitVertexE
 struct SplitVertexSet {
     VertexMap< VertexMap< index_t > > index;
 
-    vector< SplitVertex > V;
+    std::vector< SplitVertex > V;
 
     index_t insert( const SplitVertex& v ) {
         index_t vectorKey;
@@ -144,10 +144,10 @@ void print( const SplitVertexSet& V, const SplitVertexEdgeMap& E ) {
     for( const auto &v1 : E ) {
         index_t k = v1.first;
         SplitVertex u = V.at(k);
-        cout<< "u: "<<u.v->point()<<" s1: "<<V.at(u.s_1).v->point()<<"\n";
+        std::cout<< "u: "<<u.v->point()<<" s1: "<<V.at(u.s_1).v->point()<<"\n";
         for( auto v2 : v1.second )
-            cout<<"  v: "<<V.at(v2).v->point()<<" s1: "<<V.at(V.at(v2).s_1).v->point()<<"\n";
-        cout<<"\n";
+            std::cout<<"  v: "<<V.at(v2).v->point()<<" s1: "<<V.at(V.at(v2).s_1).v->point()<<"\n";
+        std::cout<<"\n";
 
     }
 }
@@ -155,8 +155,8 @@ void print( const SplitVertexSet& V, const SplitVertexEdgeMap& E ) {
 // Print the contents of a split vertex list
 void print( const SplitVertexSet& V ) {
     for( const auto &v : V.V ) {
-        cout<<"v"<<v.key<<": "<<v;
-        cout<<" s1_key: "<<v.s_1<<"\n";
+        std::cout<<"v"<<v.key<<": "<<v;
+        std::cout<<" s1_key: "<<v.s_1<<"\n";
     }
 }
 
@@ -175,18 +175,18 @@ void print( const SplitVertexSet& V ) {
 
 namespace spanning_graph {
 
-inline void addFirstEdge(DelaunayGraph& G, const VertexHandle& v, const VertexCirculator& C ) {
+void addFirstEdge(DelaunayGraph& G, const VertexHandle& v, const VertexCirculator& C ) {
     VertexHandle v2 = C->handle();
     G.addEdge(v, v2);
 }
 
-inline void addSecondEdge(DelaunayGraph& G, const VertexHandle& v, VertexCirculator C ) {
+void addSecondEdge(DelaunayGraph& G, const VertexHandle& v, VertexCirculator C ) {
     while( G.m_DT.is_infinite(++C) );
     VertexHandle v2 = C->handle();
     G.addEdge(v, v2);
 }
 
-inline void addLastEdge(DelaunayGraph& G,
+void addLastEdge(DelaunayGraph& G,
                         const VertexHandle& v,
                         VertexCirculator C,
                         const VertexHash& isRemoved ) {
@@ -200,7 +200,7 @@ inline void addLastEdge(DelaunayGraph& G,
     G.addEdge(v, v2);
 }
 
-inline void removeFirstEdge(DelaunayGraph& G, VertexCirculator C ) {
+void removeFirstEdge(DelaunayGraph& G, VertexCirculator C ) {
     VertexHandle v1 = C->handle(),
                   v2 = (++C)->handle();
     G.removeEdge(v1, v2);
@@ -212,7 +212,7 @@ inline void removeFirstEdge(DelaunayGraph& G, VertexCirculator C ) {
 //    G.removeEdge(v1, v2);
 //}
 
-inline void removeLastEdge(DelaunayGraph& G, VertexCirculator C, const VertexHash& isRemoved ) {
+void removeLastEdge(DelaunayGraph& G, VertexCirculator C, const VertexHash& isRemoved ) {
     --C;
 
     VertexCirculator done(C);
@@ -229,7 +229,7 @@ inline void removeLastEdge(DelaunayGraph& G, VertexCirculator C, const VertexHas
 void SpanningGraph( DelaunayGraph& G ) {
     using namespace spanning_graph;
 
-    vector< VertexHandle > canonical;
+    std::vector< VertexHandle > canonical;
 
     canonicalOrder( G.m_DT ,inserter( canonical, canonical.end() ) );
     //Timer timer(",");
@@ -289,7 +289,7 @@ void SpanningGraph( DelaunayGraph& G ) {
 namespace transform_polygon {
 
 inline VertexHandle find_s_1Handle(const DelaunayGraph& SG,
-                                   const pair<VertexHandle, VertexMap< index_t > >& unsplit,
+                                   const std::pair<VertexHandle, VertexMap< index_t > >& unsplit,
                                    const VertexHandle& v_n ) {
     VertexHandle v_i = unsplit.first;
     VertexCirculator N = SG.m_DT.incident_vertices(v_i); // get circulator around unsplit.first
@@ -348,7 +348,7 @@ void TransformPolygon( const DelaunayGraph& SG, SplitVertexSet& V, SplitVertexEd
         VertexHandle u = e->first->vertex((e->second + 1) % 3 ),
                          v = e->first->vertex( (e->second+2)%3 );
         if( !contains( SG.m_E.at(u), v ) ) { // only add edges that are not in SG
-            pair< const VertexHandle, VertexMap< index_t > >&
+            std::pair< const VertexHandle, VertexMap< index_t > >&
                 u_unsplit = *V.index.find(u ),
                 v_unsplit = *V.index.find(v );
             VertexHandle s_1_u = find_s_1Handle(SG, u_unsplit, v),
@@ -363,13 +363,13 @@ void TransformPolygon( const DelaunayGraph& SG, SplitVertexSet& V, SplitVertexEd
 namespace polygon_spanner {
 
 enum VertexStatus { Known, Complete };
-using VertexStatusMap = unordered_map< index_t, VertexStatus >;
+using VertexStatusMap = std::unordered_map< index_t, VertexStatus >;
 
 
 
 struct VertexHandleHash {
     size_t operator()( const SplitVertex& k ) const {
-        return hash< VertexHandle >()(k.v );
+        return boost::hash< VertexHandle >()(k.v );
     }
 };
 struct VertexHandleComparator {
@@ -399,7 +399,7 @@ void forEachNeighbor(const DelaunayGraph& SG,
      * CGAL VertexHandle hash. This way, we can match a split vertex from the
      * vertex handle provided by the circulator in constant time.
      */
-    unordered_set< SplitVertex, VertexHandleHash, VertexHandleComparator > N_E;
+        std::unordered_set< SplitVertex, VertexHandleHash, VertexHandleComparator > N_E;
 
     for( auto k: E.at( v_i.key ) ) {
         if( k != v_i.s_1 ) { // don't enter s_1
@@ -460,7 +460,7 @@ void addCrossEdges(const DelaunayGraph& SG,
                    SplitVertex& p,
                    SplitVertex& q,
                    SplitVertex& r) {
-    optional< SplitVertex > v_last = nullopt;
+    std::optional< SplitVertex > v_last = std::nullopt;
     bool isInZone = false;
     forEachNeighbor(SG, V, E, q, [&](SplitVertex &v_n) {
         if (isInZone && v_last) {
@@ -488,7 +488,7 @@ void addForwardEdges(const DelaunayGraph& SG,
     auto subangles = cone_t(rint( ceil( alpha / (PI/2) ) ));
     auto beta = alpha / number_t(subangles);
 
-    vector< SplitVertex > add( subangles, SplitVertex( SG.m_DT.infinite_vertex() ) ); // initialize add to infinite vertex
+    std::vector< SplitVertex > add( subangles, SplitVertex( SG.m_DT.infinite_vertex() ) ); // initialize add to infinite vertex
 
     number_t theta;
     cone_t i;
@@ -570,7 +570,7 @@ void processVertex(const DelaunayGraph& SG,
 //             cout<< " adding edges between s_1 and s_m...\n";
         addPolygonSpannerEdges(SG, V, E, E_P, s_1, v_i, s_m);
     } else {
-        optional< index_t > s_j_key;
+        std::optional< index_t > s_j_key;
         index_t s_k_key = s_m.key;
         forEachNeighbor(SG, V, E_P, v_i, [&](SplitVertex &v_n) {
             if (!s_j_key) s_j_key = {v_n.key};
@@ -599,7 +599,7 @@ void PolygonSpanner( DelaunayGraph& SG, SplitVertexSet& V, SplitVertexEdgeMap& E
     // Create a vertex status map
     VertexStatusMap status;
 
-    queue< index_t > level; // BFS queue
+    std::queue< index_t > level; // BFS queue
     SplitVertexEdgeMap E_P;
 
     SplitVertex v_i = V.V.front();
@@ -646,7 +646,7 @@ void PolygonSpanner( DelaunayGraph& SG, SplitVertexSet& V, SplitVertexEdgeMap& E
 //        assert( it->second.size() <= 27 );
 //    }
 
-    swap( E, E_P );
+    std::swap( E, E_P );
 
 } // PolygonSpanner( SpanningGraph &P )
 
@@ -657,6 +657,12 @@ void BGS2005(const bdps::input_t &in, bdps::output_t out) {
     using namespace bgs2005;
 
     DelaunayGraph G(in.begin(), in.end()); // Step 1
+
+    // ideally this check should go before trying to create the delaunay triangulation,
+    // but this implementation uses the "DelaunayGraph" wrapper around DelaunayL2
+    const index_t n = G.size();
+    if(n > SIZE_T_MAX - 1 || n <= 1 ) return;
+
 
     SpanningGraph(G); // Step 2
 
@@ -672,7 +678,7 @@ void BGS2005(const bdps::input_t &in, bdps::output_t out) {
     for( auto const& adj : G.m_E ) {
         VertexHandle v_1 = adj.first;
         for( auto const& v_2 : adj.second ) {
-            *result = make_pair( v_1->info(), v_2->info() );
+            *result = std::make_pair( v_1->info(), v_2->info() );
             ++result;
         }
     }

@@ -1,3 +1,9 @@
+/*
+ * Wrappers and types to aid the use of CGAL's Delaunay triangulation
+ *
+ * https://doc.cgal.org/latest/Triangulation_2/classCGAL_1_1Delaunay__triangulation__2.html
+ */
+
 #ifndef SPANNERS_DELAUNAYL2_H
 #define SPANNERS_DELAUNAYL2_H
 
@@ -15,30 +21,37 @@
 #include <CGAL/Vector_2.h>
 #include <CGAL/utils.h> // min, max
 
-#include "tools/Utilities.h"
+#include "types.h"
+#include "Utilities.h"
 
 namespace spanner {
 
-using namespace std;
+typedef index_t info_t; // the type to store in VertexHandle->info()
 
-
-
-
-typedef CGAL::Triangulation_vertex_base_with_info_2<index_t, K> Vb;
+// Build the triangulation type
+typedef CGAL::Triangulation_vertex_base_with_info_2<info_t, K>  Vb;
 typedef CGAL::Triangulation_face_base_2<K>                      Fb;
 typedef CGAL::Triangulation_data_structure_2<Vb, Fb>            Tds;
-typedef CGAL::Delaunay_triangulation_2<K, Tds>                  DelaunayL2;
 
-typedef DelaunayL2::Vertex_handle                   VertexHandle;
-typedef DelaunayL2::Vertex_circulator               VertexCirculator;
-typedef DelaunayL2::Face_handle                     FaceHandle;
+typedef CGAL::Delaunay_triangulation_2<K, Tds>                  DelaunayL2; // the main type
+
+typedef DelaunayL2::Vertex_handle               VertexHandle;   // access to triangulation vertices
+typedef DelaunayL2::Vertex_circulator           VertexCirculator; // same as handle but uses ++/-- operators to visit neighbors of a vertex in CCW/CW order, respectively
+typedef DelaunayL2::Face_handle                 FaceHandle; // access to triangulation faces (triangles)
+
+    /* Looking for an edge type?
+     * CGAL does not explicitly store edges,
+     * so they must be accessed through either
+     * a vertex, a face, or using iterators.
+     * See CGAL documentation for more info. */
+
 //typedef DelaunayL2::Finite_vertices_iterator        Finite_vertices_iterator;
 //typedef DelaunayL2::Finite_edges_iterator           Finite_edges_iterator;
 
-typedef set<VertexHandle> VertexSet;
-typedef unordered_set<VertexHandle> VertexHash;
+typedef std::set<VertexHandle> VertexSet;
+typedef std::unordered_set<VertexHandle> VertexHash;
 template< typename V >
-using VertexMap = unordered_map< VertexHandle, V >;
+using VertexMap = std::unordered_map< VertexHandle, V >;
 using AdjacencyList = VertexMap< VertexSet >;
 
 //template< typename N >
@@ -46,7 +59,7 @@ using AdjacencyList = VertexMap< VertexSet >;
 //typedef CGAL::Container_from_circulator<VertexCirculator> Vertex_container;
 
 
-inline VertexCirculator orientCirculator(const VertexCirculator& C, const VertexHandle& v ) {
+VertexCirculator orientCirculator(const VertexCirculator& C, const VertexHandle& v ) {
     VertexCirculator out(C),
             done(C);
     do {
@@ -70,8 +83,8 @@ class DelaunayGraph {
     DelaunayGraph( RandomAccessIterator pointsBegin,
                    RandomAccessIterator pointsEnd )
     {
-        vector<Point> P(pointsBegin, pointsEnd);
-        vector<index_t> index;
+        std::vector<Point> P(pointsBegin, pointsEnd);
+        std::vector<index_t> index;
         spatialSort<K>(P, index);
 
         /*Add IDs to the vertex handle. IDs are the number associated to the vertex, also maped as an index in handles.
@@ -128,7 +141,7 @@ class DelaunayGraph {
         while( ( contains( invalid, C ) || m_DT.is_infinite(C) ) && ++C != done );// cout<<v_n->point()<<"\n";
     }
 
-    inline index_t n() const {
+    inline index_t size() const {
         return m_DT.number_of_vertices();
     }
 
@@ -145,7 +158,7 @@ class DelaunayGraph {
         auto v1IncidentVertices = m_E.find(v1);
 
         if(v1IncidentVertices == m_E.end() ) // v1 not found in g
-            tie(v1IncidentVertices, ignore ) = m_E.insert(make_pair(v1, VertexSet() ) );
+            std::tie(v1IncidentVertices, std::ignore ) = m_E.insert(make_pair(v1, VertexSet() ) );
 
         v1IncidentVertices->second.insert(v2);
     }

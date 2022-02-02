@@ -17,11 +17,6 @@ namespace spanner {
 
 namespace lw2004 {
 
-inline Edge createEdge(const size_t i, const size_t j )
-{
-    return make_pair( std::min(i,j), std::max(i,j) );
-}
-
 inline void createNewEdge(const DelaunayL2& T,
                           const vector<VertexHandle>& handles,
                           index_tPairSet &E,
@@ -33,25 +28,22 @@ inline void createNewEdge(const DelaunayL2& T,
     //assert( std::max(i,j) < n );
     //assert( T.is_edge( handles.at(i), handles.at(j) ) );
     //if( printLog ) cout<<"add:("<<i<<","<<j<<") ";
-    E.insert( createEdge( i, j ) );
+    E.insert( makeNormalizedPair( i, j ) );
 }
 
 } // namespace lw2004
 
 // alpha is set to pi/2
-template< typename RandomAccessIterator, typename OutputIterator >
-void LW2004( RandomAccessIterator pointsBegin,
-             RandomAccessIterator pointsEnd,
-             OutputIterator result,
-             number_t alpha = PI/2 )
+void LW2004(const bdps::input_t &in, bdps::output_t &out,
+             number_t alpha = PI_OVER_TWO )
 {
     using namespace lw2004;
 
     // ensure valid alpha
-    alpha = CGAL::max( EPSILON, CGAL::min( alpha, PI/2 ) );
+    alpha = CGAL::max( EPSILON, CGAL::min( alpha, PI_OVER_TWO ) );
 
-    vector<Point> P(pointsBegin, pointsEnd);
-    vector<index_t> index;
+    bdps::input_t P(in);
+    std::vector<index_t> index;
     spatialSort<K>(P, index);
 
     //Step 1: Construct Delaunay triangulation
@@ -59,10 +51,10 @@ void LW2004( RandomAccessIterator pointsBegin,
 
     //N is the number of vertices in the delaunay triangulation.
     const index_t n = P.size();
-    if(n > SIZE_T_MAX - 1) return;
+    if(n > SIZE_T_MAX - 1 || n <= 1 ) return;
 
     //Stores all the vertex handles (CGAL's representation of a vertex, its properties, and data).
-    vector<VertexHandle> handles(n);
+    std::vector<VertexHandle> handles(n);
 
     /*Add IDs to the vertex handle. IDs are the number associated to the vertex, also maped as an index in handles.
       (i.e. Vertex with the ID of 10 will be in location [10] of handles.)*/
@@ -82,7 +74,7 @@ void LW2004( RandomAccessIterator pointsBegin,
     // tp.draw("del");
     //************* Step 2 ****************//
 
-    vector<size_t> ordering;
+    std::vector<size_t> ordering;
     ordering.reserve(n);
     reverseLowDegreeOrdering(T,back_inserter(ordering));
 
@@ -92,7 +84,7 @@ void LW2004( RandomAccessIterator pointsBegin,
     //************* Step 3 ****************//
     // In this step we assume alpha = pi/2 in order to minimize the degree
     index_tPairSet ePrime; // without set duplicate edges could be inserted (use the example down below)
-    vector<bool> isProcessed(n, false);
+    std::vector<bool> isProcessed(n, false);
     VertexHandle u_handle = v_inf;
 
     // Iterate through vertices by pi ordering
@@ -113,7 +105,7 @@ void LW2004( RandomAccessIterator pointsBegin,
 
         // Find and store sector boundaries, start with N
         bool noProcessedNeighbors = !isProcessed.at( N->info() );
-        vector<VertexHandle> sectorBoundaries{ N };
+        std::vector<VertexHandle> sectorBoundaries{ N };
         while( --N != done ) {
             if( ( !T.is_infinite(N) && isProcessed.at( N->info() ) ) ) { // check for v_inf first or isProcessed will be out of range
                 sectorBoundaries.push_back( N->handle() );
@@ -124,8 +116,8 @@ void LW2004( RandomAccessIterator pointsBegin,
 
         // Now, compute the angles of the sectors, the number of cones in each sector,
         // and the actual angles
-        vector<number_t> alphaReal( sectorBoundaries.size() );
-        vector< vector<VertexHandle> > closest(sectorBoundaries.size() );
+        std::vector<number_t> alphaReal( sectorBoundaries.size() );
+        std::vector< std::vector<VertexHandle> > closest(sectorBoundaries.size() );
 
         for( size_t i=0; i<sectorBoundaries.size(); ++i ) {
             number_t sectorAngle = sectorBoundaries.size() == 1 ?
@@ -199,7 +191,7 @@ void LW2004( RandomAccessIterator pointsBegin,
 //    edgeList.reserve( ePrime.size() );
 
     // Send resultant graph to output iterator
-    std::copy( ePrime.begin(), ePrime.end(), result );
+    std::copy( ePrime.begin(), ePrime.end(), std::back_inserter(out) );
 //    for( index_tPair e : ePrime ) {
 //        //edgeList.emplace_back( handles.at(e.first)->point(), handles.at(e.second)->point() );
 //

@@ -13,8 +13,6 @@
 
 namespace spanner {
 
-using namespace std;
-
 namespace bsx2009 {
 
 inline bool createNewEdge(//const DelaunayL2& T,
@@ -27,7 +25,7 @@ inline bool createNewEdge(//const DelaunayL2& T,
     //if( printLog ) cout<<"add:("<<i<<","<<j<<") ";
 
     bool inserted = false;
-    tie(ignore,inserted) = E.insert( makeNormalizedPair(i,j) );
+    std::tie(ignore,inserted) = E.insert( makeNormalizedPair(i,j) );
     return inserted;
 }
 
@@ -44,8 +42,8 @@ void BSX2009(const bdps::input_t& in, bdps::output_t& out,
     auto alphaReal =2*PI / number_t(numCones);
     //cone_t FINAL_DEGREE_BOUND = 14 + numCones;
 
-    vector<Point> P(in);
-    vector<index_t> index;
+    std::vector<Point> P(in);
+    std::vector<index_t> index;
     spatialSort<K>(P, index);
 
     //Step 1: Construct Delaunay triangulation
@@ -56,7 +54,7 @@ void BSX2009(const bdps::input_t& in, bdps::output_t& out,
     if(n > SIZE_T_MAX - 1) return;
 
     //Stores all the vertex handles (CGAL's representation of a vertex, its properties, and data).
-    vector<VertexHandle> handles(n);
+    std::vector<VertexHandle> handles(n);
 
     /*Add IDs to the vertex handle. IDs are the number associated to the vertex, also maped as an index in handles.
       (i.e. Vertex with the ID of 10 will be in location [10] of handles.)*/
@@ -73,14 +71,14 @@ void BSX2009(const bdps::input_t& in, bdps::output_t& out,
 
 
     //************* Step 2 ****************//
-    vector<index_t> ordering;
+    std::vector<index_t> ordering;
     ordering.reserve(n);
     reverseLowDegreeOrdering(T,back_inserter(ordering));
 
 
     //************* Step 3 ****************//
     index_tPairSet ePrime;
-    vector<bool> isProcessed(n, false);
+    std::vector<bool> isProcessed(n, false);
     //VertexHandle u_handle = v_inf;
 
     // Iterate through vertices
@@ -123,7 +121,7 @@ void BSX2009(const bdps::input_t& in, bdps::output_t& out,
 
         // We will add a max of numCones-1 since we are guaranteed to add the closest
         // but cannot add to the two cones touching closest.
-        vector<VertexHandle> closestInCones(numCones - 1, v_inf );
+        std::vector<VertexHandle> closestInCones(numCones - 1, v_inf );
         closestInCones.front() = closest; // add closest to "add" list
         while( --N != closest ); // start from the closest vertex
 
@@ -186,7 +184,7 @@ void BSX2009(const bdps::input_t& in, bdps::output_t& out,
 //    edgeList.reserve( ePrime.size() );
 
     // Send resultant graph to output iterator
-    std::copy( ePrime.begin(), ePrime.end(), result );
+    std::copy( ePrime.begin(), ePrime.end(), std::back_inserter(out) );
 //    for( index_tPair e : ePrime ) {
 //        // Edge list is only needed for printing. Remove for production.
 //        //edgeList.emplace_back( handles.at(e.first)->point(), handles.at(e.second)->point() );

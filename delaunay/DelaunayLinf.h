@@ -5,7 +5,12 @@
 #include <CGAL/Segment_Delaunay_graph_Linf_2.h>
 #include <CGAL/Segment_Delaunay_graph_storage_traits_with_info_2.h>
 
+#include "types.h"
+
 namespace spanner {
+
+
+    typedef index_t info_t; // the type to store in VertexHandle->info()
 
     /*
      * CGAL Objects
@@ -45,11 +50,11 @@ namespace spanner {
 
     typedef CGAL::Segment_Delaunay_graph_Linf_filtered_traits_2<K, CGAL::Field_with_sqrt_tag> Gt;
     typedef CGAL::Segment_Delaunay_graph_storage_traits_with_info_2<Gt,
-        index_t,
-        InfoConvert<index_t>,
-        InfoMerge<index_t>> StorageTraits;
+            info_t,
+        InfoConvert<info_t>,
+        InfoMerge<info_t>> StorageTraits;
 
-    typedef CGAL::Segment_Delaunay_graph_Linf_2<Gt, StorageTraits> DelaunayLinf;
+    typedef CGAL::Segment_Delaunay_graph_Linf_2<Gt, StorageTraits> DelaunayLinf; // the main type
 
 } // spanners
 

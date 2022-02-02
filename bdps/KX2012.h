@@ -20,14 +20,11 @@
 #include "../bdps/types.h"
 #include "Utilities.h"
 
-
 namespace spanner {
-
 
     namespace kx2012 {
 
-        bool
-        selectEdge(//const DelaunayL2 &T,
+        bool selectEdge(//const DelaunayL2 &T,
                    index_tPairMap &E,
                    const VertexHandle& i,
                    const VertexHandle& j) {
@@ -37,14 +34,13 @@ namespace spanner {
             auto existing = E.begin();
             bool inserted = false;
             tie(existing, inserted) = E.try_emplace(make_pair(i->info(), j->info()), false);
-            if (spanners::contains(E, edge_j_i)) { E[edge_j_i] = true; }
+            if (spanner::contains(E, edge_j_i)) { E[edge_j_i] = true; }
 
             return inserted;
         }
 
     } // namespace kx2012
 
-    template<typename RandomAccessIterator, typename OutputIterator>
     void KX2012(const bdps::input_t& in, bdps::output_t& out,
                 bool printLog = false) {
         using namespace kx2012;
@@ -54,8 +50,8 @@ namespace spanner {
 
         // Construct Delaunay triangulation
 
-        vector<Point> P(in);
-        vector<index_t> index;
+        bdps::input_t P(in);
+        std::vector<index_t> index;
         spatialSort<K>(P, index);
 
         //Step 1: Construct Delaunay triangulation
@@ -66,7 +62,7 @@ namespace spanner {
         if (n > SIZE_T_MAX - 1) return;
 
         //Stores all the vertex handles (CGAL's representation of a vertex, its properties, and data).
-        vector<VertexHandle> handles(n);
+        std::vector<VertexHandle> handles(n);
 
         /*Add IDs to the vertex handle. IDs are the number associated to the vertex, also maped as an index in handles.
           (i.e. Vertex with the ID of 10 will be in location [10] of handles.)*/
@@ -100,8 +96,8 @@ namespace spanner {
 
 
             //if(printLog) cout<<"done:"<<done->info()<<",";
-            vector<VertexHandle> angleSet; //Store the 3 vertices in a vector for each getAngle set
-            unordered_set<VertexHandle> wideVertices;
+            std::vector<VertexHandle> angleSet; //Store the 3 vertices in a vector for each getAngle set
+            std::unordered_set<VertexHandle> wideVertices;
             Point p = m->point();
             index_t currentPointIndex = m->info();
             {
@@ -151,12 +147,12 @@ namespace spanner {
 //            Timer tim;
                 if (T.is_infinite(N)) { N++; }
                 done = N;
-                unordered_map<cone_t, VertexHandle> closestVertexInCone;
-                unordered_map<cone_t, number_t> closestPointDistanceInCone;
+                std::unordered_map<cone_t, VertexHandle> closestVertexInCone;
+                std::unordered_map<cone_t, number_t> closestPointDistanceInCone;
 
                 do {
                     if (!T.is_infinite(N)) {
-                        if (spanners::contains(wideVertices, N)) {
+                        if (spanner::contains(wideVertices, N)) {
                             if (!closestVertexInCone.empty()) {
                                 coneReferencePoint = N->point();
                                 for (const auto &v : closestVertexInCone) {
@@ -170,7 +166,7 @@ namespace spanner {
                             cone_t currentCone = floor(conalAngle / PI_OVER_FIVE);
                             number_t currentDistance = getDistance(p, N->point());
 
-                            if (!spanners::contains(closestPointDistanceInCone, currentCone) ||
+                            if (!spanner::contains(closestPointDistanceInCone, currentCone) ||
                                 (currentDistance < closestPointDistanceInCone[currentCone])) {
                                 closestVertexInCone[currentCone] = N;
                                 closestPointDistanceInCone[currentCone] = currentDistance;
@@ -187,13 +183,13 @@ namespace spanner {
             {
 //            cout<<"c:";
 //            Timer tim;
-                while (!spanners::contains(wideVertices, N) && ++N != done);
+                while (!spanner::contains(wideVertices, N) && ++N != done);
                 done = N;
                 pair<int, VertexHandle> previousPoint(-1, v_inf);
                 do {
                     if (!T.is_infinite(N)) {
 
-                        if (spanners::contains(wideVertices, N)) {
+                        if (spanner::contains(wideVertices, N)) {
                             coneReferencePoint = N->point();
                             previousPoint.second = N;
                             previousPoint.first = -1;
@@ -206,10 +202,10 @@ namespace spanner {
                             for (int conalEdgesToAdd = std::min(conalDifference - 1, 2);
                                  conalEdgesToAdd > 0; conalEdgesToAdd--) {
                                 //Determine if one of the edges adjacent to the empty cone is selected already
-                                bool containsPreviousPoint = spanners::contains(E,
+                                bool containsPreviousPoint = spanner::contains(E,
                                                                                 make_pair(currentPointIndex,
                                                                                         previousPoint.second->info()));
-                                bool containsN = spanners::contains(E,
+                                bool containsN = spanner::contains(E,
                                                                     make_pair(currentPointIndex, N->info()));
                                 //assert(previousPoint.second != v_inf);
                                 //assert(N->handle() != v_inf);
@@ -241,6 +237,7 @@ namespace spanner {
 //   edgeList.reserve( E.size() );
 
         // Send resultant graph to output iterator
+        auto result = std::back_inserter(out);
         for (auto e : E) {
             if (e.second) { // e.second holds the bool value of whether both vertices of an edge selected the edge
                 // Edge list is only needed for printing. Remove for production.

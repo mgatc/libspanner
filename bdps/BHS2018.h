@@ -22,7 +22,7 @@
 
 namespace spanner {
 
-    namespace bhs2017 {
+    namespace bhs2018 {
 
         typedef CGAL::Line_2<K> Line;
         typedef std::unordered_map<Edge, number_t, IndexPairHash, IndexPairComparator> EdgeBisectorMap;
@@ -270,12 +270,12 @@ namespace spanner {
 //Main algorithm.
     void BHS2018(const bdps::input_t &in, bdps::output_t &out) {
 
-        using namespace bhs2017;
+        using namespace bhs2018;
 
         //Angle of the cones. Results in 6 cones for a given vertex.
         //const number_t alpha = PI / 3;
 
-        std::vector<Point> P(in);
+        bdps::input_t P(in);
         std::vector<index_t> index;
         spatialSort<K>(P, index);
 

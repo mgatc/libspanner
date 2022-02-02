@@ -21,8 +21,6 @@
 
 namespace spanner {
 
-    using namespace std;
-
     namespace kpt2017 {
 
         typedef DelaunayTD::VertexDescriptor VertexDescriptor;
@@ -32,11 +30,11 @@ namespace spanner {
         };
 
         //Compute max of getCone(p,q) and (getCone(q,p)+3)%6, is used to make sure cones are calculated correctly.
-        inline Color getColor(const index_t p, const index_t q, const vector<Point> &H) {
+        inline Color getColor(const index_t p, const index_t q, const bdps::input_t &H) {
             //cout<<"Getting color of "<<p<<"-"<<q<<endl;
             return td::getCone(p, q, H) % 3 == 1 ? Blue : White;
         }
-        inline Color getColor(const Edge &e, const vector<Point> &H) {
+        inline Color getColor(const Edge &e, const bdps::input_t &H) {
             return getColor(e.first, e.second, H);
         }
 
@@ -44,12 +42,12 @@ namespace spanner {
             Positive = 0, // even cones
             Negative = 1  // odd cones
         };
-        inline ConePolarity getConePolarity(const index_t p, const index_t q, const vector<Point> &H) {
+        inline ConePolarity getConePolarity(const index_t p, const index_t q, const bdps::input_t &H) {
             return ConePolarity(td::getCone(p, q, H) % 2);
         }
 
         //Finds the bisector length of a given edge.
-        number_t bisectorLength(const Edge &e, const vector<Point> &H) {
+        number_t bisectorLength(const Edge &e, const bdps::input_t &H) {
             cone_t cone = td::getCone(e.first, e.second, H);
             //assert(cone < 6);
             //assert(e.first < H.size());
@@ -65,10 +63,10 @@ namespace spanner {
             return bisectorLen;
         }
 
-        template<class AnchorListMap, class Triangulation, class PointContainer>
+        template<class AnchorListMap>
         void findAnchors(AnchorListMap &anchors,
-                         Triangulation &D,
-                         const PointContainer &P) {
+                         DelaunayTD &D,
+                         const bdps::input_t &P) {
             anchors =
                     {
                             {Blue,  {}},
@@ -93,7 +91,7 @@ namespace spanner {
 //            bool same_y = CGAL::compare_y(P[w], P[v]) == CGAL::EQUAL;
                     cone_t cone = td::getCone(w, v, P);
                     cone_t flattened_cone = cone / 2;
-                    auto e_bisector_length = bisectorLength(make_pair(w, v), P);
+                    auto e_bisector_length = bisectorLength(std::make_pair(w, v), P);
                     if (e_bisector_length < localMinimumBisectors[flattened_cone]) {
                         localAnchors[flattened_cone] = v;
                         localMinimumBisectors[flattened_cone] = e_bisector_length;
@@ -136,8 +134,8 @@ namespace spanner {
                                                         && AdjacentWhiteConeIsEmpty[vertex].positive;
         }
 
-        template<class AnchorList, class PointContainer, class EdgeList>
-        void addWhiteAnchors(AnchorList &whiteAnchors, const PointContainer &P, EdgeList &A) {
+        template<class AnchorList, class EdgeList>
+        void addWhiteAnchors(AnchorList &whiteAnchors, const bdps::input_t &P, EdgeList &A) {
             std::sort(whiteAnchors.begin(), whiteAnchors.end(),
                       [&](const auto &lhs, const auto &rhs) {
                           return bisectorLength(lhs, P) < bisectorLength(rhs, P);
@@ -150,7 +148,7 @@ namespace spanner {
                 bool negative = true;
             };
 
-            typedef unordered_map<VertexDescriptor,
+            typedef std::unordered_map<VertexDescriptor,
                     PositiveAndNegativeWhiteConesForVertex> PolarVertexStatusMap;
             PolarVertexStatusMap AdjacentWhiteConeIsEmpty;
 
@@ -172,14 +170,14 @@ namespace spanner {
             }
         }
 
-        template<class Triangulation, class EdgeList, class AnchorList, class AdjacencyList>
-        void addBlueCanonicalEdges(const Triangulation &D,
+        template<class EdgeList, class AnchorList, class AdjacencyList>
+        void addBlueCanonicalEdges(const DelaunayTD &D,
                                    const EdgeList &A,
                                    const AnchorList &blueAnchors,
                                    AdjacencyList &S) {
             for (auto blueAnchor : blueAnchors) {
-                typedef typename Triangulation::Edge_descriptor EdgeDescriptor;
-                vector<EdgeDescriptor> fan;
+                typedef DelaunayTD::Edge_descriptor EdgeDescriptor;
+                std::vector<EdgeDescriptor> fan;
                 //auto source = blueAnchor.first;
                 auto target = blueAnchor.second;
                 D.fanOfCone(target, 1, fan);
@@ -190,7 +188,7 @@ namespace spanner {
                 for (++eit; eit != fan.end(); ++eit) {
                     auto thisVertex = D.source(*eit);
 
-                    pair<VertexDescriptor, VertexDescriptor> canonicalEdge;
+                    std::pair<VertexDescriptor, VertexDescriptor> canonicalEdge;
                     bool edgeExists;
                     boost::tie(canonicalEdge, edgeExists)
                             = D.eitherEdge(thisVertex, previousVertex);
@@ -205,19 +203,19 @@ namespace spanner {
             }
         }
 
-        template<class Triangulation, class EdgeList, class PointContainer, class AnchorList, class AdjacencyList>
-        void addWhiteCanonicalEdges(const Triangulation &D,
+        template<class EdgeList, class AnchorList, class AdjacencyList>
+        void addWhiteCanonicalEdges(const DelaunayTD &D,
                                     const EdgeList &A,
-                                    const PointContainer &P,
+                                    const bdps::input_t &P,
                                     const AnchorList &whiteAnchors,
                                     AdjacencyList &S) {
             for (auto whiteAnchor : whiteAnchors) {
-                typedef typename Triangulation::Edge_descriptor EdgeDescriptor;
+                typedef DelaunayTD::Edge_descriptor EdgeDescriptor;
 
                 auto source = whiteAnchor.first;
                 auto target = whiteAnchor.second;
                 cone_t cone = D.getCone(target, source);
-                vector<EdgeDescriptor> fan;
+                std::vector<EdgeDescriptor> fan;
                 D.fanOfCone(target, cone, fan);
 
                 auto boundaryVertex = D.source(fan.back()),
@@ -226,7 +224,7 @@ namespace spanner {
 
                 if ((cone + 1) % 3 == 0) { //white side of anchor is CW
                     direction = -1;
-                    swap(previousVertex, boundaryVertex);
+                    std::swap(previousVertex, boundaryVertex);
                 }
 
                 auto eit = fan.begin();
@@ -239,7 +237,7 @@ namespace spanner {
                     auto thisVertex = D.source(*eit);
                     //cout<<"Considering white canonical edge "<<previousVertex<<"-"<<thisVertex<<endl;
 
-                    pair<VertexDescriptor, VertexDescriptor> canonicalEdge;
+                    std::pair<VertexDescriptor, VertexDescriptor> canonicalEdge;
                     bool edgeExists;
                     boost::tie(canonicalEdge, edgeExists)
                             = D.eitherEdge(thisVertex, previousVertex);
@@ -267,8 +265,8 @@ namespace spanner {
             adj[r].insert(p);
         }
 
-        template<class Triangulation, class AdjacencyList>
-        void addBlueShortcuts(const Triangulation &D, AdjacencyList &S_not_A) {
+        template<class AdjacencyList>
+        void addBlueShortcuts(const DelaunayTD &D, AdjacencyList &S_not_A) {
             for (auto v : S_not_A) {
                 // check if there are two edges that share a target
                 //cout<<"  |"<<v.first<<"|="<<v.second.size()<<"\n";
@@ -280,8 +278,8 @@ namespace spanner {
 //            cout<< "    Blue shortcut edge "<<*v.second.begin()
 //                <<"-"<<v.first<<"-"<<*(--v.second.end())<< " --> "
 //                <<*v.second.begin()<<"-"<<*(--v.second.end())<<"\n";
-                    if(!(D.edgeExists(make_pair(p, q)) && D.edgeExists(make_pair(r, q))))
-                        cout<<p<<" "<<q<<" "<<r<<"\n";
+                    if(!(D.edgeExists(std::make_pair(p, q)) && D.edgeExists(std::make_pair(r, q))))
+                        std::cout<<p<<" "<<q<<" "<<r<<"\n";
                     //assert(D.edgeExists(make_pair(p, q)) && D.edgeExists(make_pair(r, q)));
                     createShortcut(p, q, r, S_not_A);
                 }
@@ -289,19 +287,19 @@ namespace spanner {
         }
 
 
-        template<class Triangulation, class PointContainer, class AnchorList, class AdjacencyList>
-        void addWhiteShortcuts(const Triangulation &D,
-                               const PointContainer &P,
+        template<class AnchorList, class AdjacencyList>
+        void addWhiteShortcuts(const DelaunayTD &D,
+                               const bdps::input_t &P,
                                const AnchorList &whiteAnchors,
                                AdjacencyList &S) {
-            typedef typename Triangulation::Edge_descriptor EdgeDescriptor;
+            typedef DelaunayTD::Edge_descriptor EdgeDescriptor;
 
             for (auto whiteAnchor : whiteAnchors) {
                 auto source = whiteAnchor.first;
                 auto target = whiteAnchor.second;
                 //cout<<"Looking for shortcuts of white anchor "<<source<<"-"<<target<<endl;
                 cone_t cone = D.getCone(target, source);
-                vector<EdgeDescriptor> fan;
+                std::vector<EdgeDescriptor> fan;
                 D.fanOfCone(target, cone, fan);
 
                 auto boundaryEdgeOnWhiteSide = --(fan.end()),
@@ -346,12 +344,12 @@ namespace spanner {
                             iPlusOne += direction;
                         } else {
                             //cout<<"color is blue"<<endl;
-                            auto j = iPlusOne;
+                            auto j = iPlusOne,
+                                 min_j = j,
+                                 max_j = j;
 
                             auto j_vertex = D.source(*j),
-                                    j_prev = D.source(*i),
-                                    min_j = j,
-                                    max_j = j;
+                                    j_prev = D.source(*i);
 
                             auto j_angle = getAngle(P[target], P[v_i], P[j_vertex]),
                                     maxAngle = j_angle,
@@ -405,13 +403,13 @@ namespace spanner {
     void KPT2017(const bdps::input_t& in, bdps::output_t& out) {
         using namespace kpt2017;
 
-        vector<Point> P(in);
+        std::vector<Point> P(in);
 
         DelaunayTD D(P.begin(), P.end());
         {
             //Timer tim;
 
-            map<Color, vector<Edge>> Anchors;
+            std::map<Color, std::vector<Edge>> Anchors;
             findAnchors(Anchors, D, P);
 
             auto AnchorComp = [&P](const Edge &lhs, const Edge &rhs) {
@@ -420,7 +418,7 @@ namespace spanner {
                            && td::getCone(lhs.second, lhs.first, P) < td::getCone(rhs.second, rhs.first, P));
             };
             // Step 1. add all blue anchors to A
-            set<Edge, decltype(AnchorComp)> A(
+            std::set<Edge, decltype(AnchorComp)> A(
                     Anchors[Blue].begin(),
                     Anchors[Blue].end(),
                     AnchorComp);
@@ -429,7 +427,7 @@ namespace spanner {
             addWhiteAnchors(Anchors[White], P, A);
 
             // Step 3.
-            typedef map<index_t, set<index_t>> AdjacencyListMap;
+            typedef std::map<index_t, std::set<index_t>> AdjacencyListMap;
             AdjacencyListMap S_not_A;
             // Add to S every canonical edge in negative blue cones (cone 1) if the edge isn't in A
             addBlueCanonicalEdges(D, A, Anchors[Blue], S_not_A);
@@ -447,7 +445,7 @@ namespace spanner {
 
 
             // Since we didn't set S to A in step 3, we need to combine them now
-            set<Edge> S(A.begin(), A.end());
+            std::set<Edge> S(A.begin(), A.end());
 
             //cout<<"Adding S_not_A to S...\n";
             for (const auto &v : S_not_A) {
@@ -459,7 +457,7 @@ namespace spanner {
             }
 
             // Send resultant graph to output iterator
-            std::copy(S.begin(), S.end(), result);
+            std::copy(S.begin(), S.end(), std::back_inserter(out));
 //        for(auto e : S)
 //        {
 //            *result = e;

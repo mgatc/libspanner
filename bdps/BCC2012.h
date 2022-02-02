@@ -378,7 +378,7 @@ namespace spanner {
         //assert(DEGREE == 7 || DEGREE == 6);
 
         // Construct Delaunay triangulation
-        vector<Point> P(in);
+        bdps::input_t P(in);
         std::vector<index_t> index;
         spatialSort<K>(P, index);
 

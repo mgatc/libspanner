@@ -24,12 +24,11 @@ namespace spanner {
         const number_t orthBisectorSlopes[] = {0, -1 * COT30, COT30, 0, -1 * COT30, COT30};
 
 //Finds the cone of p containing vertex q, for this algorithm all vertices have 6 cones (0-5) with an getAngle of (PI/3).
-        template<class Point_2>
-        cone_t getSingleCone(const index_t p, const index_t q, const std::vector <Point_2> &H) {
+        cone_t getSingleCone(const index_t p, const index_t q, const std::vector <Point> &H) {
             if (CGAL::compare_y(H[p], H[q]) == CGAL::EQUAL) {
                 return 1 + 3 * int(CGAL::compare_x(H[p], H[q]) == CGAL::LARGER);
             }
-            const Point_2 refPoint(H.at(p).x() - TAN30, H[p].y() + 1);
+            const Point refPoint(H.at(p).x() - TAN30, H[p].y() + 1);
             const number_t theta = getAngle(refPoint, H[p], H.at(q));
             const cone_t cone = (theta / alpha);
 
@@ -37,7 +36,6 @@ namespace spanner {
         }
 
 //Compute max of getCone(p,q) and (getCone(q,p)+3)%6, is used to make sure cones are calculated correctly.
-        template<class Point>
         size_t getCone(const size_t p, const size_t q, const std::vector <Point> &H) {
             return p < q ?
                    getSingleCone(p, q, H)
@@ -238,7 +236,7 @@ namespace spanner {
         };
     }
 
-    typedef td::HalfThetaTriangulation<K> DelaunayTD;
+    typedef td::HalfThetaTriangulation<K> DelaunayTD; // the main type
 
 
 }
