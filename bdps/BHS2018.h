@@ -1,6 +1,6 @@
 //Needs optimizing currently testing.
-#ifndef SPANNERS_BHS2017_H
-#define SPANNERS_BHS2017_H
+#ifndef LIBSPANNER_BHS2017_H
+#define LIBSPANNER_BHS2017_H
 
 //Base libraries.
 #include <cmath>         // ceil, floor, isinf
@@ -34,7 +34,7 @@ namespace spanner {
         const number_t orthBisectorSlopes[] = {0, -1 * COT30, COT30, 0, -1 * COT30, COT30};
 
         //Finds the cone of p containing vertex q, for this algorithm all vertices have 6 cones (0-5) with an getAngle of (PI/3).
-        inline cone_t getSingleCone(const index_t p, const index_t q, const vector<VertexHandle> &H) {
+        inline cone_t getSingleCone(const index_t p, const index_t q, const std::vector<VertexHandle> &H) {
             const number_t alpha = PI / 3;
             const Point refPoint(H.at(p)->point().x() - TAN30, H[p]->point().y() + 1);
             //Point refPoint(H[p]->point().x(), H[p] ->point().y() + 1);
@@ -47,7 +47,7 @@ namespace spanner {
         }
 
         //Compute max of getCone(p,q) and (getCone(q,p)+3)%6, is used to make sure cones are calculated correctly.
-        inline cone_t getCone(const index_t p, const index_t q, const vector<VertexHandle> &H) {
+        inline cone_t getCone(const index_t p, const index_t q, const std::vector<VertexHandle> &H) {
             return H[p] < H[q] ? getSingleCone(p, q, H) : (getSingleCone(q, p, H) + 3) % 6;
 //            if (H[p] < H[q]) {
 //                return getSingleCone(p, q, H);
@@ -57,7 +57,7 @@ namespace spanner {
         }
 
         //Finds the bisector length of a given edge.
-        inline number_t bisectorLength(const Edge &e, const vector<VertexHandle> &H) {
+        inline number_t bisectorLength(const Edge &e, const std::vector<VertexHandle> &H) {
 
             cone_t cone = getCone(e.first, e.second, H);
             //assert(cone < 6);
@@ -102,8 +102,8 @@ namespace spanner {
                   If a cone is empty then the set E_A does not contain an edge with the
                   given endpoint in the cone calculated above, and the status will be
                   set to true.*/
-                bool p_coneEmpty = AL_E_A.find(make_pair(p, p_cone)) == AL_E_A.end();
-                bool q_coneEmpty = AL_E_A.find(make_pair(q, q_cone)) == AL_E_A.end();
+                bool p_coneEmpty = AL_E_A.find(std::make_pair(p, p_cone)) == AL_E_A.end();
+                bool q_coneEmpty = AL_E_A.find(std::make_pair(q, q_cone)) == AL_E_A.end();
 
                 /*Checks that both cone neighborhood are empty, if these are both empty
                 then the condition for step 3 is met and (p,q) is added to E_A. (3.2)*/
@@ -111,8 +111,8 @@ namespace spanner {
                     E_A.push_back(e.first);
 
                     //Adds (p,q) to an adjacency list for future calculation.
-                    AL_E_A.emplace(make_pair(p, p_cone), q);
-                    AL_E_A.emplace(make_pair(q, q_cone), p);
+                    AL_E_A.emplace(std::make_pair(p, p_cone), q);
+                    AL_E_A.emplace(std::make_pair(q, q_cone), p);
                 }
             }
         }
@@ -125,7 +125,7 @@ namespace spanner {
                                           const std::vector<VertexHandle> &H,
                                           const EdgeBisectorMap &B) {
 
-            Edge e = make_pair(p, r);
+            Edge e = std::make_pair(p, r);
 
             /*Vertex circulator oriented to r to find fist and last end vertex. Once r is the circulator is oriented to the first vertex in the cone,
               that is in the canonical neighborhood. Once found all neighbors are added in clockwise order. For a vertex to be in the canonical
@@ -136,13 +136,13 @@ namespace spanner {
             while (++N_p != H[r]);
 
             while (!DT.is_infinite(++N_p) && getCone(p, N_p->info(), H) == cone &&
-                   (B.at(make_pair(p, N_p->info())) > B.at(e)
-                    || abs(B.at(make_pair(p, N_p->info())) - B.at(e)) < EPSILON));
+                   (B.at(std::make_pair(p, N_p->info())) > B.at(e)
+                    || abs(B.at(std::make_pair(p, N_p->info())) - B.at(e)) < EPSILON));
 
 
             while (!DT.is_infinite(--N_p) && getCone(p, N_p->info(), H) == cone &&
-                   (B.at(make_pair(p, N_p->info())) > B.at(e)
-                    || abs(B.at(make_pair(p, N_p->info())) - B.at(e)) < EPSILON)) {
+                   (B.at(std::make_pair(p, N_p->info())) > B.at(e)
+                    || abs(B.at(std::make_pair(p, N_p->info())) - B.at(e)) < EPSILON)) {
                 canNeighbors.push_back(N_p->info());
             }
         }
@@ -167,7 +167,7 @@ namespace spanner {
                                  PointConeMap &AL_e_a) {
 
             //Creates an edge (p,r)
-            //Edge e = make_pair(p, r);
+            //Edge e = std::make_pair(p, r);
 
             //Computes the cone of p containing r.
             cone_t p_cone = getCone(p, r, H);
@@ -191,8 +191,8 @@ namespace spanner {
 
                 //End edges in the canonical neighborhood.
                 const std::vector<Edge> canExtrema{
-                        make_pair(canNeighbors.at(1), canNeighbors.front()),
-                        make_pair(canNeighbors.at(canEdges - 1), canNeighbors.back())
+                        std::make_pair(canNeighbors.at(1), canNeighbors.front()),
+                        std::make_pair(canNeighbors.at(canEdges - 1), canNeighbors.back())
                 };
 
                 //If r is an end vertex and there is more than one edge in the neighborhood add the edge with endpoint r. (4.3
@@ -272,6 +272,9 @@ namespace spanner {
 
         using namespace bhs2018;
 
+        const index_t n = in.size();
+        if (n > SIZE_T_MAX - 1 || n <= 1) return;
+
         //Angle of the cones. Results in 6 cones for a given vertex.
         //const number_t alpha = PI / 3;
 
@@ -281,10 +284,6 @@ namespace spanner {
 
         //Step 1: Construct Delaunay triangulation
         DelaunayL2 DT;
-
-        //N is the number of vertices in the delaunay triangulation.
-        size_t n = P.size();
-        if (n > SIZE_T_MAX - 1) return;
 
         //Stores all the vertex handles (CGAL's representation of a vertex, its properties, and data).
         std::vector<VertexHandle> handles(n);
@@ -310,7 +309,7 @@ namespace spanner {
             //Timer t;
 
             for (auto e = DT.finite_edges_begin(); e != DT.finite_edges_end(); ++e) {
-                auto edge = make_pair(
+                auto edge = std::make_pair(
                         e->first->vertex((e->second + 1) % 3)->info(),
                         e->first->vertex((e->second + 2) % 3)->info()
                 );
@@ -383,7 +382,7 @@ namespace spanner {
 //
 //            *result = e;
 //            ++result;
-////        *result = make_pair(handles.at(e.second)->point(), handles.at(e.first)->point());
+////        *result = std::make_pair(handles.at(e.second)->point(), handles.at(e.first)->point());
 ////        ++result;
 //        }
 

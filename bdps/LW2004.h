@@ -1,5 +1,5 @@
-#ifndef SPANNERS_LW2004_H
-#define SPANNERS_LW2004_H
+#ifndef LIBSPANNER_LW2004_H
+#define LIBSPANNER_LW2004_H
 
 #include <algorithm> // min, max
 #include <cmath> // ceil
@@ -17,17 +17,10 @@ namespace spanner {
 
 namespace lw2004 {
 
-inline void createNewEdge(const DelaunayL2& T,
-                          const vector<VertexHandle>& handles,
-                          index_tPairSet &E,
+inline void createNewEdge(index_tPairSet &E,
                           const index_t i,
-                          const index_t j,
-                          const index_t n,
-                          bool printLog = false )
+                          const index_t j)
 {
-    //assert( std::max(i,j) < n );
-    //assert( T.is_edge( handles.at(i), handles.at(j) ) );
-    //if( printLog ) cout<<"add:("<<i<<","<<j<<") ";
     E.insert( makeNormalizedPair( i, j ) );
 }
 
@@ -39,6 +32,9 @@ void LW2004(const bdps::input_t &in, bdps::output_t &out,
 {
     using namespace lw2004;
 
+    const index_t n = in.size();
+    if (n > SIZE_T_MAX - 1 || n <= 1) return;
+
     // ensure valid alpha
     alpha = CGAL::max( EPSILON, CGAL::min( alpha, PI_OVER_TWO ) );
 
@@ -48,10 +44,6 @@ void LW2004(const bdps::input_t &in, bdps::output_t &out,
 
     //Step 1: Construct Delaunay triangulation
     DelaunayL2 T;
-
-    //N is the number of vertices in the delaunay triangulation.
-    const index_t n = P.size();
-    if(n > SIZE_T_MAX - 1 || n <= 1 ) return;
 
     //Stores all the vertex handles (CGAL's representation of a vertex, its properties, and data).
     std::vector<VertexHandle> handles(n);
@@ -104,7 +96,7 @@ void LW2004(const bdps::input_t &in, bdps::output_t &out,
         done = N;
 
         // Find and store sector boundaries, start with N
-        bool noProcessedNeighbors = !isProcessed.at( N->info() );
+//        bool noProcessedNeighbors = !isProcessed.at( N->info() );
         std::vector<VertexHandle> sectorBoundaries{ N };
         while( --N != done ) {
             if( ( !T.is_infinite(N) && isProcessed.at( N->info() ) ) ) { // check for v_inf first or isProcessed will be out of range
@@ -162,7 +154,7 @@ void LW2004(const bdps::input_t &in, bdps::output_t &out,
                     // cross edges
                     if( !T.is_infinite( lastN ) && !isProcessed.at( lastN->info() ) ) {
 //                        if( printLog ) cout<<"cross_";
-                        createNewEdge( T, handles, ePrime, lastN->info(), N->info(), n, false );
+                        createNewEdge(ePrime, lastN->info(), N->info());
                     }
                 }
             }
@@ -174,7 +166,7 @@ void LW2004(const bdps::input_t &in, bdps::output_t &out,
          && !T.is_infinite( lastN ) && !isProcessed.at( lastN->info() ) )
         {
 //            if( printLog ) cout<<"cross_";
-            createNewEdge( T, handles, ePrime, lastN->info(), N->info(), n, false );
+            createNewEdge(ePrime, lastN->info(), N->info());
         }
 
         // Add edges in closest
@@ -182,7 +174,7 @@ void LW2004(const bdps::input_t &in, bdps::output_t &out,
             for( const auto& v : segment )
                 if( !T.is_infinite(v) ) {
 //                    if( printLog ) cout<<"forward_";
-                    createNewEdge( T, handles, ePrime, u, v->info(), n, false );
+                    createNewEdge(ePrime, u, v->info());
                 }
     }
 

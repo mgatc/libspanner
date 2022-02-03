@@ -1,5 +1,5 @@
-#ifndef UNF_SPANNERS_BKPX2015_H
-#define UNF_SPANNERS_BKPX2015_H
+#ifndef LIBSPANNER_BKPX2015_H
+#define LIBSPANNER_BKPX2015_H
 
 #include <array>
 #include <iostream>
@@ -715,8 +715,10 @@ namespace spanner {
     void BKPX2015(const bdps::input_t &in, bdps::output_t &out) {
 
         using namespace bkpx2015;
-
         using bkpx2015::VertexHandle, bkpx2015::VertexCirculator, bkpx2015::FaceHandle;
+
+        const index_t n = in.size();
+        if (n > SIZE_T_MAX - 1 || n <= 1) return;
 
         // construct Linf Delaunay triangulation
         bdps::input_t P(in);
@@ -727,7 +729,6 @@ namespace spanner {
         index_t id = 0;
 
         // store the vertex handles
-        const size_t n = P.size();
         std::vector<VertexHandle> handles(n);
 
         //FaceHandle hint;

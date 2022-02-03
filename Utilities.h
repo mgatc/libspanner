@@ -489,4 +489,4 @@ namespace spanner {
     }
 }
 
-#endif //LIBSPANNER_UTILITIES_H
+#endif //LIBLIBSPANNER_UTILITIES_H

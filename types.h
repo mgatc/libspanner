@@ -1,7 +1,3 @@
-//
-// Created by matt on 2/2/22.
-//
-
 #ifndef LIBSPANNER_TYPES_H
 #define LIBSPANNER_TYPES_H
 
@@ -31,4 +27,4 @@ namespace spanner {
 
 }
 
-#endif //LIBSPANNER_TYPES_H
+#endif //LIBLIBSPANNER_TYPES_H

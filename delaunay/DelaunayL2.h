@@ -1,11 +1,13 @@
 /*
- * Wrappers and types to aid the use of CGAL's Delaunay triangulation
+ * Wrappers and types to aid the use of CGAL's L2 Delaunay triangulation.
+ *
+ * L2 triangulation construction is quite fast.
  *
  * https://doc.cgal.org/latest/Triangulation_2/classCGAL_1_1Delaunay__triangulation__2.html
  */
 
-#ifndef SPANNERS_DELAUNAYL2_H
-#define SPANNERS_DELAUNAYL2_H
+#ifndef LIBSPANNER_DELAUNAYL2_H
+#define LIBSPANNER_DELAUNAYL2_H
 
 #include <iostream>
 #include <queue>

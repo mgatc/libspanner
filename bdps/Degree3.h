@@ -1,5 +1,5 @@
-#ifndef SPANNERS_DEGREE3_H
-#define SPANNERS_DEGREE3_H
+#ifndef LIBSPANNER_DEGREE3_H
+#define LIBSPANNER_DEGREE3_H
 
 #include <array>
 #include <iostream>
@@ -819,7 +819,7 @@ namespace spanner {
         template< typename Point >
         struct EuclideanDistanceToPoint {
             Point goal;
-            EuclideanDistanceToPoint(const Point& p) : goal(p) {}
+            explicit EuclideanDistanceToPoint(const Point& p) : goal(p) {}
             number_t operator()( Point p ) {
                 return (number_t) sqrt(CGAL::squared_distance(p,goal));
             }
@@ -832,12 +832,12 @@ namespace spanner {
             }
         };
 
-        template<typename T>
-        struct MaxHeapCompare {
-            bool operator()( const T &n1, const T &n2 ) const {
-                return (n1.first < n2.first) || ((n1.first == n2.first) && (n1.second < n2.second));
-            }
-        };
+//        template<typename T>
+//        struct MaxHeapCompare {
+//            bool operator()( const T &n1, const T &n2 ) const {
+//                return (n1.first < n2.first) || ((n1.first == n2.first) && (n1.second < n2.second));
+//            }
+//        };
 
         template< typename VertexContainer >
         std::optional<number_t> AStar( VertexContainer V, std::vector<SpannerCones> &H8, index_t start, index_t goal, number_t stretchBound ) {
@@ -942,7 +942,7 @@ namespace spanner {
 
             for (cone_t cone = 0; cone < 4; cone++) {
 
-                if (H8[u_id][cone].size() == 0)
+                if (H8[u_id][cone].empty())
                     continue;
 
                 SpannerEdge e = H8[u_id][cone].front();
@@ -988,7 +988,7 @@ namespace spanner {
             else {
 
                 std::optional<SpannerEdge> candidateAdd = std::nullopt;
-                number_t stretchBound = MAX_STRETCH_CONSTRAINT;
+                stretchBound = MAX_STRETCH_CONSTRAINT;
 
 
                 for (auto cone : H8[u_id]) {
@@ -1340,7 +1340,6 @@ namespace spanner {
 
                     std::optional<VertexHandle> optimal = std::nullopt;
 
-                    bool found = false;
                     auto endpt = v;
 
                     do {
@@ -1378,7 +1377,7 @@ namespace spanner {
                                 size_t previousCone = getCone(previous, middle);
                                 size_t nextCone = getCone(next, middle);
 
-                                bool shortcut  = (yaoEdges[previous_id][previousCone].first == middle && yaoEdges[middle_id][(previousCone+2)%4].first != previous
+                                shortcut  = (yaoEdges[previous_id][previousCone].first == middle && yaoEdges[middle_id][(previousCone+2)%4].first != previous
                                                   && anchorEdges[previous_id][previousCone].first != middle && anchorEdges[middle_id][(previousCone+2)%4].first != previous)
                                                  && (yaoEdges[next_id][nextCone].first == middle && yaoEdges[middle_id][(nextCone+2)%4].first != next
                                                      && anchorEdges[next_id][nextCone].first != middle && anchorEdges[middle_id][(nextCone+2)%4].first != next);
@@ -1394,7 +1393,7 @@ namespace spanner {
 
                                 if (v_distance < min_distance) {
 
-                                    index_t v_id = v->storage_site().info();
+                                    v_id = v->storage_site().info();
 
                                     found = true;
                                     min_distance = v_distance;
@@ -1431,11 +1430,13 @@ namespace spanner {
 
 
 
-    void DEG3(const bdps::input_t& in, bdps::output_t& out, bool printLog = false) {
+    void DEG3(const bdps::input_t& in, bdps::output_t& out) {
 
         using namespace degree3;
-
         using degree3::VertexHandle, degree3::VertexCirculator, degree3::FaceHandle;
+
+        const index_t n = in.size();
+        if (n > SIZE_T_MAX - 1 || n <= 1) return;
 
         // construct Linf Delaunay triangulation
         std::vector<Point> P(in);
@@ -1446,7 +1447,6 @@ namespace spanner {
         index_t id = 0;
 
         // store the vertex handles
-        const size_t n = P.size();
         std::vector<VertexHandle> handles(n);
 
         //FaceHandle hint;

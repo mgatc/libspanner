@@ -1,5 +1,16 @@
-#ifndef TD_DELAUNAY_H
-#define TD_DELAUNAY_H
+/*
+ * Wrappers and types to aid the use of CGAL's Theta graph construction to create a TD Delaunay triangulation.
+ *
+ * TD Delaunay construction is quite slow.
+ *
+ * https://doc.cgal.org/latest/Cone_spanners_2/classCGAL_1_1Construct__theta__graph__2.html
+ *
+ * uses boost graph library (bgl) to represent the graph
+ * https://www.boost.org/doc/libs/1_78_0/libs/graph/doc/
+ */
+
+#ifndef LIBSPANNER_DELAUNAYTD_H
+#define LIBSPANNER_DELAUNAYTD_H
 
 #include <CGAL/Compact_container.h>
 #include <CGAL/Construct_theta_graph_2.h>

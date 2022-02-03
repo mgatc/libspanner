@@ -1,6 +1,5 @@
-//Needs optimizing currently testing.
-#ifndef SPANNERS_BGHP2010_H
-#define SPANNERS_BGHP2010_H
+#ifndef LIBSPANNER_BGHP2010_H
+#define LIBSPANNER_BGHP2010_H
 
 //Base libraries.
 #include <cmath>         // ceil, floor, isinf
@@ -307,13 +306,15 @@ namespace spanner {
                   bool printLog = false) {
         using namespace bghp2010;
 
+        const index_t n = in.size();
+        if (n > SIZE_T_MAX - 1 || n <= 1) return;
+
         // Step 1
         bdps::input_t P(in);
         DelaunayTD D(P.begin(), P.end());
 
         {
             //Timer tim;
-            const index_t n = D.number_of_vertices();
 
             std::map<EdgeLabel, std::vector<std::vector<size_t>>> KeyEdges = {
                     {CLOSEST, std::vector<std::vector<index_t>>(n, std::vector<index_t>(3, SIZE_T_MAX))},

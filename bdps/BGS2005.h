@@ -1,5 +1,5 @@
-#ifndef SPANNERS_BGS2005_H
-#define SPANNERS_BGS2005_H
+#ifndef LIBSPANNER_BGS2005_H
+#define LIBSPANNER_BGS2005_H
 
 #include <algorithm> // min, swap
 #include <functional> // hash

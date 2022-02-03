@@ -1,6 +1,6 @@
 
-#ifndef SPANNERS_KX2012_H
-#define SPANNERS_KX2012_H
+#ifndef LIBSPANNER_KX2012_H
+#define LIBSPANNER_KX2012_H
 
 #include <cmath>         // ceil, floor
 #include <unordered_set> // selected
@@ -30,10 +30,10 @@ namespace spanner {
                    const VertexHandle& j) {
             //assert(T.is_edge(i, j));
             //if( printLog ) cout<<"add:("<<i->info()<<","<<j->info()<<") ";
-            auto edge_j_i = make_pair(j->info(), i->info());
+            auto edge_j_i = std::make_pair(j->info(), i->info());
             auto existing = E.begin();
             bool inserted = false;
-            tie(existing, inserted) = E.try_emplace(make_pair(i->info(), j->info()), false);
+            tie(existing, inserted) = E.try_emplace(std::make_pair(i->info(), j->info()), false);
             if (spanner::contains(E, edge_j_i)) { E[edge_j_i] = true; }
 
             return inserted;
@@ -46,9 +46,8 @@ namespace spanner {
         using namespace kx2012;
         using spanner::contains;
 
-        //if(printLog) cout<<"alpha:"<<alpha<<",";
-
-        // Construct Delaunay triangulation
+        const index_t n = in.size();
+        if (n > SIZE_T_MAX - 1 || n <= 1) return;
 
         bdps::input_t P(in);
         std::vector<index_t> index;
@@ -56,10 +55,6 @@ namespace spanner {
 
         //Step 1: Construct Delaunay triangulation
         DelaunayL2 T;
-
-        //N is the number of vertices in the delaunay triangulation.
-        index_t n = P.size();
-        if (n > SIZE_T_MAX - 1) return;
 
         //Stores all the vertex handles (CGAL's representation of a vertex, its properties, and data).
         std::vector<VertexHandle> handles(n);
@@ -121,9 +116,9 @@ namespace spanner {
                     if (angleSum > FOUR_PI_OVER_FIVE) {
                         wideVertices.insert(angleSet.begin(), angleSet.end());
                         if (printLog) {
-                            cout << "Points: {" << angleSet[2]->info() << "," << m->info() << ","
+                            std::cout << "Points: {" << angleSet[2]->info() << "," << m->info() << ","
                                  << angleSet[0]->info()
-                                 << "} make getAngle: " << angleSum << endl;
+                                 << "} make getAngle: " << angleSum << std::endl;
 
                         }
                         coneReferenceHandle = angleSet[2];
@@ -185,7 +180,7 @@ namespace spanner {
 //            Timer tim;
                 while (!spanner::contains(wideVertices, N) && ++N != done);
                 done = N;
-                pair<int, VertexHandle> previousPoint(-1, v_inf);
+                std::pair<int, VertexHandle> previousPoint(-1, v_inf);
                 do {
                     if (!T.is_infinite(N)) {
 
@@ -203,10 +198,10 @@ namespace spanner {
                                  conalEdgesToAdd > 0; conalEdgesToAdd--) {
                                 //Determine if one of the edges adjacent to the empty cone is selected already
                                 bool containsPreviousPoint = spanner::contains(E,
-                                                                                make_pair(currentPointIndex,
+                                                                                std::make_pair(currentPointIndex,
                                                                                         previousPoint.second->info()));
                                 bool containsN = spanner::contains(E,
-                                                                    make_pair(currentPointIndex, N->info()));
+                                                                    std::make_pair(currentPointIndex, N->info()));
                                 //assert(previousPoint.second != v_inf);
                                 //assert(N->handle() != v_inf);
                                 if (containsPreviousPoint && !containsN) {

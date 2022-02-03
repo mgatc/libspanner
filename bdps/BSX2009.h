@@ -1,5 +1,5 @@
-#ifndef SPANNERS_BSX2009_H
-#define SPANNERS_BSX2009_H
+#ifndef LIBSPANNER_BSX2009_H
+#define LIBSPANNER_BSX2009_H
 
 //#include <algorithm> // min, max
 #include <cmath> // ceil
@@ -25,7 +25,7 @@ inline bool createNewEdge(//const DelaunayL2& T,
     //if( printLog ) cout<<"add:("<<i<<","<<j<<") ";
 
     bool inserted = false;
-    std::tie(ignore,inserted) = E.insert( makeNormalizedPair(i,j) );
+    std::tie(std::ignore,inserted) = E.insert( makeNormalizedPair(i,j) );
     return inserted;
 }
 
@@ -34,6 +34,9 @@ inline bool createNewEdge(//const DelaunayL2& T,
 void BSX2009(const bdps::input_t& in, bdps::output_t& out,
               number_t alpha = 2*PI/3) {
     using namespace bsx2009;
+
+    const index_t n = in.size();
+    if (n > SIZE_T_MAX - 1 || n <= 1) return;
 
     // ensure valid alpha
     alpha = CGAL::max( EPSILON, CGAL::min( alpha, 2*PI/3 ) );
@@ -49,9 +52,6 @@ void BSX2009(const bdps::input_t& in, bdps::output_t& out,
     //Step 1: Construct Delaunay triangulation
     DelaunayL2 T;
 
-    //N is the number of vertices in the delaunay triangulation.
-    size_t n = P.size();
-    if(n > SIZE_T_MAX - 1) return;
 
     //Stores all the vertex handles (CGAL's representation of a vertex, its properties, and data).
     std::vector<VertexHandle> handles(n);

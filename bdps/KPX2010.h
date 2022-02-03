@@ -1,6 +1,6 @@
 
-#ifndef SPANNERS_KPX2010_H
-#define SPANNERS_KPX2010_H
+#ifndef LIBSPANNER_KPX2010_H
+#define LIBSPANNER_KPX2010_H
 
 #include <cmath>         // ceil, floor
 #include <unordered_set> // selected
@@ -38,6 +38,9 @@ void KPX2010( const bdps::input_t& in, bdps::output_t& out,
               cone_t k=14 ) {
     using namespace kpx2010;
 
+    const index_t n = in.size();
+    if (n > SIZE_T_MAX - 1 || n <= 1) return;
+
     // ensure k >= 14
     k = std::max( k, size_t(14) );
     const number_t alpha = 2*PI / number_t(k);
@@ -52,10 +55,6 @@ void KPX2010( const bdps::input_t& in, bdps::output_t& out,
 
     //Step 1: Construct Delaunay triangulation
     DelaunayL2 T;
-
-    //N is the number of vertices in the delaunay triangulation.
-    size_t n = P.size();
-    if(n > SIZE_T_MAX - 1) return;
 
     //Stores all the vertex handles (CGAL's representation of a vertex, its properties, and data).
     std::vector<VertexHandle> handles(n);

@@ -1,5 +1,5 @@
-#ifndef SPANNERS_BCC2012_H
-#define SPANNERS_BCC2012_H
+#ifndef LIBSPANNER_BCC2012_H
+#define LIBSPANNER_BCC2012_H
 
 #include <bitset>
 #include <cmath>         // ceil, floor, isinf
@@ -25,7 +25,7 @@ namespace spanner {
 
     namespace bcc2012 {
 
-        const index_t TARGET = 7;
+//        const index_t TARGET = 7;
 
 //        GraphPrinter tikz("../scratch/","scratch-graph");
 
@@ -58,7 +58,7 @@ namespace spanner {
                                                            handles[q]->point()))
                                                / alpha) % numCones;
             }
-            return make_pair( cone[1], cone[0]!=cone[1] ? cone[0] : cone[2] );
+            return std::make_pair( cone[1], cone[0]!=cone[1] ? cone[0] : cone[2] );
         }
 
 //        inline cone_t getPreviousCone(const cone_t cone, const cone_t numCones) {
@@ -101,7 +101,7 @@ namespace spanner {
         std::tuple<index_t,index_t,index_t> getNeighborsInCone(const index_t p, const index_t q, const cone_t cone, const cone_t numCones,
                                                           const DelaunayL2& DT, const std::vector<VertexHandle>& handles, const std::vector<index_t>& closest,
                                                                std::vector<index_t>& Q) {
-            const auto ALPHA = static_cast<number_t>(2 * PI / static_cast<number_t>(numCones));
+//            const auto ALPHA = static_cast<number_t>(2 * PI / static_cast<number_t>(numCones));
 
             // Line 2: Build Q
             auto N_p = DT.incident_vertices(handles[p]);
@@ -151,11 +151,11 @@ namespace spanner {
  *  complains about ununsed parameters here, it is safe to ignore.
  */
         template<cone_t DEGREE, cone_t NUM_CONES = DEGREE + 1>
-        inline void wedge(const DelaunayL2 &DT,
-                          const std::vector<VertexHandle> &handles,
-                          const std::vector<index_t> &closest,
-                          const WedgeParameters &params,
-                          std::vector<Edge> &addToE_star) {
+        [[maybe_unused]] inline void wedge([[maybe_unused]] const DelaunayL2 &DT,
+                                           [[maybe_unused]] const std::vector<VertexHandle> &handles,
+                                           [[maybe_unused]] const std::vector<index_t> &closest,
+                                           [[maybe_unused]] const WedgeParameters &params,
+                                           [[maybe_unused]] std::vector<Edge> &addToE_star) {
             //assert(DEGREE == 6 || DEGREE == 7);
         }
 
@@ -280,9 +280,9 @@ namespace spanner {
                 return;
 
             add.clear();
-            std::optional<size_t> iLessOneCcw = make_optional(p),
-                             iLessOneCw =  i > 0 ? make_optional(Q[i-1]) : nullopt,
-                             iPlusOneCcw = i < k ? make_optional(Q[i+1]) : nullopt,
+            std::optional<size_t> iLessOneCcw = std::make_optional(p),
+                             iLessOneCw =  i > 0 ? std::make_optional(Q[i-1]) : std::nullopt,
+                             iPlusOneCcw = i < k ? std::make_optional(Q[i+1]) : std::nullopt,
                              iPlusOneCw = iLessOneCcw;
 
             std::function<bool(index_t)> inQPrime = [&](index_t v)-> bool {
@@ -377,6 +377,9 @@ namespace spanner {
 
         //assert(DEGREE == 7 || DEGREE == 6);
 
+        const index_t n = in.size();
+        if (n > SIZE_T_MAX - 1 || n <= 1) return;
+
         // Construct Delaunay triangulation
         bdps::input_t P(in);
         std::vector<index_t> index;
@@ -385,9 +388,6 @@ namespace spanner {
         //Step 1: Construct Delaunay triangulation
         DelaunayL2 DT;
 
-        //N is the number of vertices in the delaunay triangulation.
-        index_t n = P.size();
-        if (n > SIZE_T_MAX - 1) return;
 
         //Stores all the vertex handles (CGAL's representation of a vertex, its properties, and data).
         std::vector<VertexHandle> handles(n);

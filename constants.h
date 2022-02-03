@@ -1,7 +1,3 @@
-//
-// Created by matt on 2/2/22.
-//
-
 #ifndef LIBSPANNER_CONSTANTS_H
 #define LIBSPANNER_CONSTANTS_H
 
@@ -21,4 +17,4 @@ const double COT30 = 1/TAN30;
 const number_t PI_OVER_FIVE = PI / 5;
 const number_t FOUR_PI_OVER_FIVE = 4 * PI / 5;
 
-#endif //LIBSPANNER_CONSTANTS_H
+#endif //LIBLIBSPANNER_CONSTANTS_H

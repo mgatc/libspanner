@@ -1,5 +1,13 @@
-#ifndef GEOMETRIC_SPANNERS_DELAUNAYLINF_H
-#define GEOMETRIC_SPANNERS_DELAUNAYLINF_H
+/*
+ * Wrappers and types to aid the use of CGAL's Linf Delaunay triangulation.
+ *
+ * Linf triangulation construction is slower than L2 but still much faster than TD.
+ *
+ * https://doc.cgal.org/latest/Segment_Delaunay_graph_Linf_2/index.html
+ */
+
+#ifndef LIBSPANNER_DELAUNAYLINF_H
+#define LIBSPANNER_DELAUNAYLINF_H
 
 #include <CGAL/Segment_Delaunay_graph_Linf_filtered_traits_2.h>
 #include <CGAL/Segment_Delaunay_graph_Linf_2.h>
@@ -20,7 +28,7 @@ namespace spanner {
      * our use of SDG does not result in these functors actually
      * being used by the SDG.
      *
-     * They will cause "unused" warnings, but these are safe to
+     * They may cause "unused" warnings, but these are safe to
      * ignore.
      */
 
@@ -29,11 +37,11 @@ namespace spanner {
         typedef T Info;
         typedef const Info &result_type;
 
-        inline const Info &operator()(const Info &info0, bool) const {
+        inline const Info &operator()(const Info &info0, [[maybe_unused]]bool) const {
             return info0; // just return the info of the supporting segment
         }
 
-        inline const Info &operator()(const Info &info0, const Info &, bool) const {
+        inline const Info &operator()(const Info &info0, [[maybe_unused]]const Info &, [[maybe_unused]]bool) const {
             return info0; // just return the info of the supporting segment
         }
     };
@@ -43,7 +51,7 @@ namespace spanner {
         typedef T Info;
         typedef Info result_type;
 
-        inline Info operator()(const Info &info0, const Info &info1) const {
+        inline Info operator()(const Info &info0, [[maybe_unused]]const Info &info1) const {
             return info0; // just return the info of the supporting segment
         }
     };
@@ -58,4 +66,4 @@ namespace spanner {
 
 } // spanners
 
-#endif //GEOMETRIC_SPANNERS_DELAUNAYLINF_H
+#endif //SPANNER_DELAUNAYLINF_H

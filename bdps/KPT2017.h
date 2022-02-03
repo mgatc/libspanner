@@ -1,6 +1,6 @@
 //Needs optimizing currently testing.
-#ifndef SPANNERS_KPT2017_H
-#define SPANNERS_KPT2017_H
+#ifndef LIBSPANNER_KPT2017_H
+#define LIBSPANNER_KPT2017_H
 
 //Base libraries.
 #include <cmath>         // ceil, floor, isinf
@@ -267,7 +267,7 @@ namespace spanner {
 
         template<class AdjacencyList>
         void addBlueShortcuts(const DelaunayTD &D, AdjacencyList &S_not_A) {
-            for (auto v : S_not_A) {
+            for (const auto& v : S_not_A) {
                 // check if there are two edges that share a target
                 //cout<<"  |"<<v.first<<"|="<<v.second.size()<<"\n";
                 if (v.second.size() > 1) {
@@ -402,6 +402,9 @@ namespace spanner {
 // Main algorithm.
     void KPT2017(const bdps::input_t& in, bdps::output_t& out) {
         using namespace kpt2017;
+
+        const index_t n = in.size();
+        if (n > SIZE_T_MAX - 1 || n <= 1) return;
 
         std::vector<Point> P(in);
 
