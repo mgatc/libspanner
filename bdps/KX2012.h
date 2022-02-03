@@ -15,10 +15,10 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
-#include "constants.h"
-#include "delaunay/DelaunayL2.h"
+#include "../constants.h"
+#include "../delaunay/DelaunayL2.h"
 #include "../bdps/types.h"
-#include "Utilities.h"
+#include "../Utilities.h"
 
 namespace spanner {
 
@@ -296,4 +296,4 @@ namespace spanner {
 
 } // namespace spanner
 
-#endif // SPANNERS_KX2012_H
+#endif // SPANNER_KX2012_H

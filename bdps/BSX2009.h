@@ -5,10 +5,10 @@
 #include <cmath> // ceil
 #include <vector> // vertex containers
 
-#include "constants.h"
-#include "delaunay/DelaunayL2.h"
+#include "../constants.h"
+#include "../delaunay/DelaunayL2.h"
 #include "../bdps/types.h"
-#include "Utilities.h"
+#include "../Utilities.h"
 
 
 namespace spanner {

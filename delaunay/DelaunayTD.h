@@ -21,9 +21,9 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include "constants.h"
-#include "types.h"
-#include "Utilities.h"
+#include "../constants.h"
+#include "../types.h"
+#include "../Utilities.h"
 
 namespace spanner {
 
@@ -175,7 +175,7 @@ namespace spanner {
 
             inline std::pair<std::pair<VertexDescriptor, VertexDescriptor>, bool>
             eitherEdge(const VertexDescriptor &u, const VertexDescriptor &v) const {
-                auto orientedEdge = make_pair(u, v),
+                auto orientedEdge = std::make_pair(u, v),
                         reversedEdge = reverse_pair(orientedEdge);
                 bool reversedEdgeExists = edgeExists(reversedEdge);
                 return make_pair(

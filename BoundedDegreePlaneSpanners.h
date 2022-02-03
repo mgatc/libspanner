@@ -19,7 +19,6 @@
 
 namespace spanner {
 
-
     enum BoundedDegreePlaneSpannerAlgorithm {
         AlgorithmFirst = 0,
 //        Bgs2005 = AlgorithmFirst,
@@ -36,6 +35,9 @@ namespace spanner {
         Degree3,
         AlgorithmLast
     };
+
+    namespace bdps {
+
     const std::string ALGORITHM_SYMBOL = "Algorithm";
     const std::vector<std::string> ALGORITHM_NAMES = {
 //            "BGS2005",
@@ -67,7 +69,8 @@ namespace spanner {
 //            "20",
             "INF"
     };
+    } // bdps
 
-} // spanners
+} // spanner
 
-#endif //GEOMETRIC_SPANNERS_BOUNDEDDEGREEPLANESPANNERS_H
+#endif //SPANNER_BOUNDEDDEGREEPLANESPANNERS_H

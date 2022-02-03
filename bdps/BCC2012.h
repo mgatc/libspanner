@@ -14,10 +14,10 @@
 #include <CGAL/circulator.h>
 
 
-#include "constants.h"
-#include "delaunay/DelaunayL2.h"
+#include "../constants.h"
+#include "../delaunay/DelaunayL2.h"
 #include "../bdps/types.h"
-#include "Utilities.h"
+#include "../Utilities.h"
 
 
 
@@ -522,14 +522,14 @@ namespace spanner {
 //                {"color",      tikz.activeEdgeColor},
 //                {"line width", to_string(tikz.inactiveEdgeWidth/2)}
 //        };
-//        spanners::bcc2012::tikz.drawEdges(DT, tikz.triangulationEdgeOptions);
+//        bdps_experiment::bcc2012::tikz.drawEdges(DT, tikz.triangulationEdgeOptions);
 //
-//         spanners::bcc2012::tikz.drawEdges(E.begin(),E.end(),P,edgeOptions);
+//         bdps_experiment::bcc2012::tikz.drawEdges(E.begin(),E.end(),P,edgeOptions);
 //
 //
 //
 ////        vector<Point> target = {P[TARGET]};
-//        spanners::bcc2012::tikz.drawVertices(P.begin(), P.end(), tikz.activeVertexOptions);
+//        bdps_experiment::bcc2012::tikz.drawVertices(P.begin(), P.end(), tikz.activeVertexOptions);
 //
 //
 

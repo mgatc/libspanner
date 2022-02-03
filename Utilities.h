@@ -60,7 +60,7 @@ namespace spanner {
 
     template<typename T>
     inline std::pair<T, T> makeNormalizedPair(const T &i, const T &j) {
-        return make_pair(
+        return std::make_pair(
                 CGAL::min(i, j),
                 CGAL::max(i, j)
         );
@@ -489,4 +489,4 @@ namespace spanner {
     }
 }
 
-#endif //LIBLIBSPANNER_UTILITIES_H
+#endif //LIBSPANNER_UTILITIES_H

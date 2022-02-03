@@ -14,10 +14,10 @@
 #include <CGAL/Line_2.h>
 
 //Project library
-#include "constants.h"
-#include "delaunay/DelaunayL2.h"
+#include "../constants.h"
+#include "../delaunay/DelaunayL2.h"
 #include "../bdps/types.h"
-#include "Utilities.h"
+#include "../Utilities.h"
 
 
 namespace spanner {
@@ -361,9 +361,9 @@ namespace spanner {
             //Union of sets E_A and E_CAN for final edge set removes duplicates.
             E_A.insert(E_A.end(), E_CAN.begin(), E_CAN.end());
             std::sort(E_A.begin(), E_A.end(), [](const auto &l, const auto &r) {
-                return (CGAL::min(l.first, l.second) < min(r.first, r.second)
-                        || (min(l.first, l.second) == min(r.first, r.second) &&
-                            max(l.first, l.second) < max(r.first, r.second)));
+                return (CGAL::min(l.first, l.second) < CGAL::min(r.first, r.second)
+                        || (CGAL::min(l.first, l.second) == CGAL::min(r.first, r.second) &&
+                        CGAL::max(l.first, l.second) < CGAL::max(r.first, r.second)));
             });
             E_A.erase(unique(E_A.begin(), E_A.end(), [](const auto &l, const auto &r) {
                 return (l.first == r.first && l.second == r.second)

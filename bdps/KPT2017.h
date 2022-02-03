@@ -13,10 +13,10 @@
 #include <CGAL/algorithm.h>
 
 //Project library
-#include "constants.h"
-#include "delaunay/DelaunayTD.h"
+#include "../constants.h"
+#include "../delaunay/DelaunayTD.h"
 #include "../bdps/types.h"
-#include "Utilities.h"
+#include "../Utilities.h"
 
 
 namespace spanner {

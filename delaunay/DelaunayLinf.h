@@ -13,7 +13,7 @@
 #include <CGAL/Segment_Delaunay_graph_Linf_2.h>
 #include <CGAL/Segment_Delaunay_graph_storage_traits_with_info_2.h>
 
-#include "types.h"
+#include "../types.h"
 
 namespace spanner {
 

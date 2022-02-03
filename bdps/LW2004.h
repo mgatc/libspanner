@@ -6,10 +6,10 @@
 #include <unordered_set> // hashed adjacency list
 #include <vector> // vertex containers
 
-#include "constants.h"
-#include "delaunay/DelaunayL2.h"
+#include "../constants.h"
+#include "../delaunay/DelaunayL2.h"
 #include "../bdps/types.h"
-#include "Utilities.h"
+#include "../Utilities.h"
 
 
 
@@ -246,4 +246,4 @@ void LW2004(const bdps::input_t &in, bdps::output_t &out,
 
 } // namespace spanner
 
-#endif // SPANNERS_LW2004_H
+#endif // SPANNER_LW2004_H

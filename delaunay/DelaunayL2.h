@@ -23,8 +23,8 @@
 #include <CGAL/Vector_2.h>
 #include <CGAL/utils.h> // min, max
 
-#include "types.h"
-#include "Utilities.h"
+#include "../types.h"
+#include "../Utilities.h"
 
 namespace spanner {
 
