@@ -24,7 +24,7 @@
 #include <CGAL/utils.h> // min, max
 
 #include "../types.h"
-#include "../Utilities.h"
+#include "../utilities.h"
 
 namespace spanner {
 

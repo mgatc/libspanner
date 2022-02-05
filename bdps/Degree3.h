@@ -34,7 +34,7 @@
 #include "../constants.h"
 #include "../delaunay/DelaunayLinf.h"
 #include "../bdps/types.h"
-#include "../Utilities.h"
+#include "../utilities.h"
 
 
 namespace spanner {

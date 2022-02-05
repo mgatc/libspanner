@@ -23,7 +23,7 @@
 
 #include "../constants.h"
 #include "../types.h"
-#include "../Utilities.h"
+#include "../utilities.h"
 
 namespace spanner {
 

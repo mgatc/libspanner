@@ -39,7 +39,7 @@ add_executable(libspanner
         constants.h
         types.h
 
-        main.cpp Utilities.h)
+        main.cpp utilities.h)
 
 target_link_libraries(libspanner gmp)
 target_link_libraries(libspanner mpfr)

@@ -16,7 +16,7 @@
 #include "../constants.h"
 #include "../delaunay/DelaunayTD.h"
 #include "../bdps/types.h"
-#include "../Utilities.h"
+#include "../utilities.h"
 
 
 namespace spanner {
