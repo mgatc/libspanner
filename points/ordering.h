@@ -5,6 +5,7 @@
 #ifndef LIBSPANNER_ORDERING_H
 #define LIBSPANNER_ORDERING_H
 
+#include <boost/heap/fibonacci_heap.hpp>
 #include <CGAL/Kernel/global_functions.h>
 #include <CGAL/spatial_sort.h>
 #include <CGAL/Spatial_sort_traits_adapter_2.h>
@@ -12,6 +13,7 @@
 
 #include "include/libspanner/constants.h"
 #include "include/libspanner/types.h"
+#include "include/libspanner/utilities.h"
 
 namespace spanner {
 

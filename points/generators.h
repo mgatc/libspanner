@@ -1,5 +1,5 @@
-#ifndef SPANNERS_POINTGENERATORS_H
-#define SPANNERS_POINTGENERATORS_H
+#ifndef SPANNERS_GENERATORS_H
+#define SPANNERS_GENERATORS_H
 
 #include <iostream>
 #include <vector>
@@ -15,9 +15,10 @@
 #include <CGAL/point_generators_2.h>
 #include <CGAL/random_convex_set_2.h>
 
-#include "tools/Utilities.h"
+#include "./utilities.h"
+#include "../utilities.h"
 
-namespace bdps_experiment {
+namespace spanner {
 
     enum DistributionType {
         DistributionTypeFirst = 0,
@@ -66,7 +67,7 @@ namespace bdps_experiment {
             std::ifstream in(filename);
 
             if (!in.is_open())
-                cout<<"Error opening file!\n";
+                std::cout<<"Error opening file!\n";
 
             number_t x,y;
             while ( in >> x >> y ) {
@@ -217,14 +218,14 @@ namespace bdps_experiment {
                     shiftX = shiftDistribution(rngShift) % (20 * numberOfClusters);
                     shiftY = shiftDistribution(rngShift) % (20 * numberOfClusters);
 
-                    while (!(S.find(make_pair(shiftX, shiftY)) == S.end())) {
+                    while (!(S.find(std::make_pair(shiftX, shiftY)) == S.end())) {
                         shiftX = shiftDistribution(rngShift) % (20 * numberOfClusters);
                         shiftY = shiftDistribution(rngShift) % (20 * numberOfClusters);
                     }
                 } else
                     shiftX = shiftY = 0;
 
-                S.insert(make_pair(shiftX, shiftY));
+                S.insert(std::make_pair(shiftX, shiftY));
 
                 for (index_t i = 0; i < pointsInACuster; i++) {
                     double x = distributionX(generatorX) + shiftX;
@@ -243,7 +244,7 @@ namespace bdps_experiment {
         }
 
         void randomOnGrid(const index_t n, std::vector<Point> &P) {
-            std::unordered_set<pair<int, int>, boost::hash<pair<int, int>>> S;
+            std::unordered_set<std::pair<int, int>, boost::hash<std::pair<int, int>>> S;
             std::unordered_set<Point> P_unique;
 
             std::mt19937 rngX(seed());
@@ -255,9 +256,9 @@ namespace bdps_experiment {
             while (count < n) {
                 int x = xDistribution(rngX), y = yDistribution(rngY);
 
-                if (S.find(make_pair(x, y)) == S.end()) {
+                if (S.find(std::make_pair(x, y)) == S.end()) {
                     P_unique.emplace(x, y);
-                    S.insert(make_pair(x, y));
+                    S.insert(std::make_pair(x, y));
                     count++;
                 }
             }
@@ -295,132 +296,10 @@ namespace bdps_experiment {
         }
         template<class Container>
         void perturb(Container &P, number_t val) {
-            CGAL::perturb_points_2(P.begin(), P.end(), val, val,m_randCgal);
+            spanner::perturb(P,val,m_randCgal); // the function from ../utilities.h
         }
     };
 
+} // spanner
 
-
-    template< class OutputIterator >
-    void readPointsFromFile( OutputIterator out, const std::string& outputFileName, const size_t n=SIZE_T_MAX ) {
-        std::ifstream in(outputFileName);
-        if (in.is_open()) {
-            double x,y;
-            size_t i = 0;
-            while ( i<n && in >> x >> y ) {
-                *out = Point(x,y);
-                ++out;
-                ++i;
-            }
-            in.close();
-        }
-    }
-
-    template<class InputIterator>
-    bool writePointsToFile(InputIterator begin, InputIterator end, std::string name="") {
-        std::vector<Point> points(begin,end);
-        std::ofstream out;
-        if(name.empty())
-            name = "data-" + to_string(points.size()) + ".xy";
-        out.open( name, std::ios::trunc );
-
-        if(!out.is_open())
-            return false;
-
-        for( Point p : points )
-            out << p << std::endl;
-
-        out.close();
-        return points.empty();
-    }
-
-    template< class OutputIterator >
-    void generateRandomPoints( index_t n, number_t size, OutputIterator pointsOut ) {
-        typedef CGAL::Creator_uniform_2<number_t,Point> Creator;
-
-        auto g1 = CGAL::Random_points_in_square_2<Point,Creator>( size );
-        auto g2 = CGAL::Random_points_in_disc_2<Point,Creator>(   size );
-        auto g3 = CGAL::Random_points_on_square_2<Point,Creator>( size );
-        auto g4 = CGAL::Random_points_on_circle_2<Point,Creator>( size );
-
-
-        auto g1s = CGAL::Random_points_in_square_2<Point,Creator>( size/4 );
-        auto g2s = CGAL::Random_points_in_disc_2<Point,Creator>(   size/4 );
-        auto g3s = CGAL::Random_points_on_square_2<Point,Creator>( size/4 );
-        auto g4s = CGAL::Random_points_on_circle_2<Point,Creator>( size/4 );
-
-        std::set<Point> points;
-
-//        std::copy_n( g2, n/9, inserter(points) );
-//        std::copy_n( g3, n/9, inserter(points) );
-//        std::copy_n( g4, n/9, inserter(points) );
-//
-//        std::copy_n( g1s, n/9, inserter(points) );
-//        std::copy_n( g2s, n*2/9, inserter(points) );
-//        std::copy_n( g3s, n/9, inserter(points) );
-//        std::copy_n( g4s, n/18, inserter(points) );
-
-        index_t remaining;
-        while( (remaining = n - points.size()) > 0 ) {
-            std::copy_n( g1, remaining, inserter(points) );
-        }
-
-
-        //points.emplace(0,0);
-
-        // copy points to output iterator
-        for( Point p : points )
-            *(pointsOut++) = p;
-
-        writePointsToFile(points.begin(),points.end());
-
-    }
-
-
-//    template< class OutputIterator >
-//    string generatePointsNovel( OutputIterator pointsOut, size_t rows = 10, size_t cols = 10 ) {
-//
-//        vector<Point> points;
-//
-//        const double skew = 0.01;
-//        for( size_t i=0; i<rows; ++i ) {
-//            bool rowIsOdd = i%2;
-//            for( size_t j=rowIsOdd; j<cols; j+=1+(rowIsOdd) ) {
-//                bool colIsOdd = j%2;
-//                double y = static_cast<double>(i);
-//                y += (rowIsOdd || colIsOdd) ?
-//                     0 : (skew * ( (i+j)%4 == 0 ? -1 : 1 ) );
-////            if( rowIsEven && j%2 == 0 ) {
-////                if( (i+j)%4 == 0 ) {
-////                    y -= skew;
-////                } else {
-////                    y += skew;
-////                }
-////            }
-//                Point p(j,y);
-//                //cout<<p<<"\n";
-//                points.push_back(p);
-//            }
-//        }
-//
-//        // copy points to output iterator
-//        for( Point p : points )
-//            *(pointsOut++) = p;
-//
-//        // copy points to file
-//        ofstream out;
-//        string fName;
-//        fName = "data-NOVEL-" + to_string(points.size()) + "_" + to_string(rows) + "x" + to_string(cols) + ".txt";
-//        out.open( fName, ios::trunc );
-//        for( Point p : points )
-//            out << p << endl;
-//
-//        out.close();
-//
-//        return fName;
-//    }
-
-
-} // bdps_experiment
-
-#endif //SPANNERS_POINTGENERATORS_H
+#endif //SPANNERS_GENERATORS_H

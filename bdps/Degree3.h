@@ -13,29 +13,18 @@
 #include <unordered_map> // G_prime
 #include <vector>        // handles
 #include <optional>
+
 #include <boost/functional/hash.hpp> // size_t pair hash : used in Yao_inf_4
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/algorithm.h> //
 #include <CGAL/circulator.h>
 #include <CGAL/squared_distance_2.h>
-//#include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
-// typedefs for the traits and the algorithm
-#include <CGAL/Segment_Delaunay_graph_Linf_filtered_traits_2.h>
-#include <CGAL/Segment_Delaunay_graph_Linf_2.h>
-#include <CGAL/Segment_Delaunay_graph_storage_traits_with_info_2.h>
-
-// includes for spatial sorting
-#include <CGAL/spatial_sort.h>
-#include <CGAL/Spatial_sort_traits_adapter_2.h>
-#include <CGAL/boost/iterator/counting_iterator.hpp>
-
-
+#include "../bdps/types.h"
 #include "../constants.h"
 #include "../delaunay/DelaunayLinf.h"
-#include "../bdps/types.h"
+#include "../geometry.h"
+#include "../points/ordering.h"
 #include "../utilities.h"
-
 
 namespace spanner {
 

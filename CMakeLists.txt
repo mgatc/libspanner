@@ -36,10 +36,14 @@ add_executable(libspanner
         delaunay/DelaunayLinf.h
         delaunay/DelaunayTD.h
 
+        points/generators.h
+        points/ordering.h
+
         constants.h
         types.h
+        utilities.h
 
-        main.cpp utilities.h)
+        main.cpp )
 
 target_link_libraries(libspanner gmp)
 target_link_libraries(libspanner mpfr)

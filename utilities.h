@@ -6,7 +6,6 @@
 #define LIBSPANNER_UTILITIES_H
 
 #include <boost/functional/hash.hpp> // hashing pairs
-#include <boost/heap/fibonacci_heap.hpp>
 #include <CGAL/point_generators_2.h>
 #include <fstream>
 #include <utility>
@@ -106,7 +105,7 @@ namespace spanner {
     }
 
 
-  
+
 
     template< typename Point >
     struct PointHasher {
