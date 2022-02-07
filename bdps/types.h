@@ -8,7 +8,7 @@
 namespace spanner {
 
     namespace bdps {
-        typedef std::vector<Point> input_t;
+        typedef PointContainer input_t;
         typedef std::vector<Edge> output_t;
     }
 }

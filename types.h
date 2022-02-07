@@ -15,6 +15,7 @@ namespace spanner {
     typedef Epick K;
 
     typedef K::Point_2 Point;
+    typedef std::vector<Point> PointContainer;
     typedef K::Vector_2 Vector_2;
 
     typedef K::FT number_t;
