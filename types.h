@@ -4,11 +4,15 @@
 #include <vector>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
 namespace spanner {
 
     // The geometry kernel aka how to represent the math
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+    typedef CGAL::Exact_predicates_inexact_constructions_kernel Epick;
+    typedef CGAL::Exact_predicates_exact_constructions_kernel Epeck;
+
+    typedef Epick K;
 
     typedef K::Point_2 Point;
     typedef K::Vector_2 Vector_2;

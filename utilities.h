@@ -76,10 +76,16 @@ namespace spanner {
     }
 
 
-    std::string removeSpaces(std::string str) {
-        str.erase(std::remove_if(str.begin(), str.end(),
-                                 [](auto x) { return std::isspace(x); }), str.end());
+    // see https://stackoverflow.com/questions/5891610/how-to-remove-certain-characters-from-a-string-in-c
+    std::string removeCharsFromString( std::string str, const char* charsToRemove ) {
+        for ( unsigned int i = 0; i < strlen(charsToRemove); ++i ) {
+            str.erase( remove(str.begin(), str.end(), charsToRemove[i]), str.end() );
+        }
         return str;
+    }
+    std::string removeSpaces(std::string str) {
+        const char space = ' ';
+        return removeCharsFromString(str,&space);
     }
     std::vector<std::string> getNextLineAndSplitIntoTokens(std::istream& str)
     {
@@ -105,7 +111,12 @@ namespace spanner {
     }
 
 
-
+    template<typename P>
+    struct PointComparator {
+        bool operator()(const P &p, const P &q) const noexcept {
+            return CGAL::compare_xy(p,q) == CGAL::SMALLER;
+        }
+    };
 
     template< typename Point >
     struct PointHasher {
