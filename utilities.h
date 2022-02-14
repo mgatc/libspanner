@@ -7,6 +7,7 @@
 
 #include <boost/functional/hash.hpp> // hashing pairs
 #include <CGAL/point_generators_2.h>
+#include <cstring>
 #include <fstream>
 #include <utility>
 
@@ -78,7 +79,7 @@ namespace spanner {
 
     // see https://stackoverflow.com/questions/5891610/how-to-remove-certain-characters-from-a-string-in-c
     std::string removeCharsFromString( std::string str, const char* charsToRemove ) {
-        for ( unsigned int i = 0; i < strlen(charsToRemove); ++i ) {
+        for ( unsigned int i = 0; i < std::strlen(charsToRemove); ++i ) {
             str.erase( remove(str.begin(), str.end(), charsToRemove[i]), str.end() );
         }
         return str;
