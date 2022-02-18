@@ -11,6 +11,7 @@ namespace spanner {
         typedef PointContainer input_t;
         typedef std::vector<Edge> output_t;
     }
+
 }
 
-#endif //LIBLIBSPANNER_TYPES_H
+#endif //LIBSPANNER_BDPS_TYPES_H
