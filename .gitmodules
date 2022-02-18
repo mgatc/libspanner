@@ -1,7 +1,7 @@
 [submodule "cpptex"]
-	path = include/cpptex
+	path = cpptex
 	url = https://github.com/mgatc/cpptex.git
 
 [submodule "libalex"]
-	path = include/libalex
+	path = libalex
 	url = https://github.com/mgatc/libalex.git
