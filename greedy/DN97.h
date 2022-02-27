@@ -5,6 +5,9 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <list>
+#include <map>
+#include <vector>
 
 #include "libspanner/greedy/types.h"
 
@@ -12,627 +15,426 @@ namespace spanner {
 
     namespace dn97 {
 
-//                           Metric definition
-// ===================================================================
-// The Euclidean (L_2) metric is used.
-// ====================================================================
-
-#define SWAP(a,b) { help = *a; *a = *b; *b = help; }
-#define MAX(a,b)  ((a > b) ? (a) : (b))
-#define MIN(a,b)  ((a < b) ? (a) : (b))
-
-        struct simple_edge
-        {
-            int    idx1;
-            int    idx2;
-            double dist;
-        };
-
-        struct sp_statistics {
-            long    margin_dist_count;
-            long    point_dist_count;
-
-            float   fair_split_sort_cpu;
-            float   fair_split_tree_cpu;
-
-            float   wspd_cpu;
-
-            long    number_of_pairs;
-            long    overlapping_pairs;
-            float   sparse_graph_cpu;
-
-            long    closest_total;
-            long    closest_recursive1;
-            long    closest_recursive2;
-
-            long    pq_insertions;
-            long    pq_findmins;
-            long    pq_max_size;
-
-            long    kruskal_edges1;
-            long    kruskal_edges2;
-            float   kruskal_select_cpu;
-            float   kruskal_sort_cpu;
-            float   kruskal_cpu;
-
-            double  tree_length;
-            double  sp_length;
-            float   total_cpu;
-        };
-
-        extern struct sp_statistics SpStats;
-
-// ----------------------------------------------------------------------
-// Compute L_p distance between two points
-// References into P array
-// ----------------------------------------------------------------------
-        static double lp_distance(double* P, int ndim, int idx1, int idx2)
-        {
-            double dist = 0.0, d;
-            int dim;
-
-            // Euclidean distance between two points
-            for (dim = 0; dim < ndim; dim++)
-            {
-                d = P[idx1++] - P[idx2++];
-                dist += d*d;
-            }
-            dist = sqrt(dist);
-
-            return dist;
-        }
-
-        template<class NT>
-        class cmp_edgesA : public leda_cmp_base<edge> {
-            const edge_array<NT>* edge_cost;
-        public:
-            cmp_edgesA(const edge_array<NT>& cost) : edge_cost(&cost) {}
-
-            int operator()(const edge& x, const edge& y) const
-            { return compare((*edge_cost)[x],(*edge_cost)[y]); }
-        };
-
-
-        static char *usage =
-                "\nUsage: clusterspanner\n"
-                "Compute a cluster spanner and show on the screen.\n"
-                "The graph is read from standard input (e.g., from another program).\n";
-
-        struct sp_statistics SpStats;
-        bool DEBUG = false;
-
-        void SINGLE_SOURCE(const GRAPH<int,double>& G,   // input graph
-                           node s,                       // source node
+        void SINGLE_SOURCE(const PointContainer& V,
+                const AdjacencyListDense& G,   // input graph
+                           index_t i,                       // source node
                            double R1,                    // small radius
                            double R2,                    // large radius (R1 <= R2)
-                           list<node>& C1,               // nodes within dist <= R1
-                           list<node>& C2,               // nodes within R1 < dist <= R2
-                           list<node>& C3,               // nodes having updated labels
-                           node_array<double>& dist,     // distance from source
-                           node_array<edge>&   pred,     // predecessor node
-                           node_pq<double>& PQ           // priority queue
+                           std::list<index_t>& C1,               // nodes within dist <= R1
+                           std::list<index_t>& C2,               // nodes within R1 < dist <= R2
+                           std::list<index_t>& C3,               // nodes having updated labels
+                           std::vector<double>& ShortestPaths,     // distance from source
+                           std::vector<index_t>& Parents,     // predecessor node
+                           bool addToC1 = true
         )
         {
-            node v;
-            edge e;
+//            index_t v;
+//            Edge e;
+//
+//            dist[s] = 0.0;
+//            PQ.emplace(0.0, s);
+//            C3.push_back(s);
+//
+//            while (!PQ.empty())
+//            {
+//                index_t u = (PQ.begin())->second; // add u to S
+//                double du = dist[u];
+//                if (du <= R1)
+//                {
+//                    if (u != s) C1.push_back(u);  // add u to set C1
+//                }
+//                else
+//               {
+//                    if (du <= R2)
+//                        C2.push_back(u);   // add u to set C2
+//                    else
+//                        break;        // large cluster radius exceeded - exit
+//                }
+//
+//                forall_adj_edges(e, u)
+//                {
+//                    v = G.opposite(u, e); // makes it work for ugraphs
+//                    double c = du + G[e];
+//                    if (pred[v] == nil && v != s )
+//                    {
+//                        PQ.insert(v, c); // first message to v
+//                        C3.push(v);
+//                    }
+//                    else if (c < dist[v])
+//                        PQ.decrease_p(v, c); // better path
+//                    else continue;
+//                    dist[v] = c;
+//                    pred[v] = e;
+//                }
+//            }
 
-            dist[s] = 0;
-            PQ.insert(s, 0);
-            C3.push(s);
 
-            while (!PQ.empty())
-            {
-                node u = PQ.del_min(); // add u to S
-                double du = dist[u];
-                if (du <= R1)
-                {
-                    if (u != s) C1.push(u);  // add u to set C1
-                }
+
+            typedef std::map<number_t, index_t>
+                    Heap;
+            typedef Heap::iterator
+                    HeapHandle;
+
+            const index_t n = V.size();
+            auto startPoint = V.at(i);
+
+            Heap open;
+            std::unordered_map<index_t, HeapHandle> handleToHeap(n);
+            handleToHeap[i] = open.emplace(0, i).first;
+
+            ShortestPaths[i] = 0;
+            std::unordered_set<index_t> C3Helper;
+            C3Helper.insert(i);
+
+            auto current = open.begin(); // initialize current vertex to start
+            index_t u_index = current->second;
+            auto currentPoint = startPoint;
+            auto neighborPoint = currentPoint;
+            number_t newScore = 0;
+
+            do {
+                current = open.begin();
+
+                u_index = current->second;
+                currentPoint = V[u_index];
+
+                double du = ShortestPaths[u_index];
+
+                if (addToC1 && u_index != i && du <= R1)
+                    C1.push_back(u_index);  // add u to set C1
+                else if (du <= R2)
+                    C2.push_back(u_index);   // add u to set C2
                 else
-                {
-                    if (du <= R2)
-                        C2.push(u);   // add u to set C2
-                    else
-                        break;        // large cluster radius exceeded - exit
-                }
+                    break;        // large cluster radius exceeded - exit
 
-                forall_adj_edges(e, u)
-                {
-                    v = G.opposite(u, e); // makes it work for ugraphs
-                    double c = du + G[e];
-                    if (pred[v] == nil && v != s )
-                    {
-                        PQ.insert(v, c); // first message to v
-                        C3.push(v);
+
+
+
+                // loop through neighbors of current
+                for (index_t neighbor : G.at(u_index)) {
+                    neighborPoint = V[neighbor];
+                    C3Helper.insert(neighbor);
+
+                    newScore = du + getDistance(currentPoint, neighborPoint);
+
+                    if (newScore < ShortestPaths[neighbor]) {
+                        Parents[neighbor] = u_index;
+                        ShortestPaths[neighbor] = newScore;
+
+                        if (contains(handleToHeap, neighbor)) {
+                            open.erase(handleToHeap[neighbor]);
+                        }
+                        handleToHeap[neighbor] = open.emplace(ShortestPaths[neighbor], neighbor).first;
                     }
-                    else if (c < dist[v])
-                        PQ.decrease_p(v, c); // better path
-                    else continue;
-                    dist[v] = c;
-                    pred[v] = e;
                 }
-            }
 
-            // if (!PQ.empty()) PQ.clear(); // clear PQ - GIVES AN ERROR WHEN DELETING PQ
-            while (!PQ.empty()) PQ.del_min(); // clear PQ
+                open.erase(current);
+            } while (!open.empty());
+
+            std::copy(C3Helper.begin(), C3Helper.end(), std::back_inserter(C3));
 
         } // end SINGLE_SOURCE
 
 
-        void CLUSTER_GRAPH(const GRAPH<int,double>& G,
-                           double delta,
-                           double W,
-                           GRAPH<int,double>& CG,
-                           list<node> & LCCenters,
-                           array<node> & LNC,
-                           array<edge>& LInC,
-                           array<edge>& LOutC1,
-                           array<edge>& LOutC2,
-                           int & InM,
-                           int & OutM1,
-                           int & OutM2)
+
+
+
+
+    }
+
+
+    void ClusterGraph(const greedy::input_t& P, greedy::output_t& out,
+                      double W = 1.0, double delta = 0.8) {
+        index_t M = 5; // ? What is this? Num edges. Num edges of what? Complete graph of P?
+        index_t D = 2; // dimension
+        index_t N = P.size();
+
+        std::vector<Edge> L(M);
+
+        double sp_length = 0.0;
+
+        AdjacencyListDense G(N);
+
+
+        for(Edge e : L) {
+            G[e.first].insert(e.second);
+            G[e.second].insert(e.first);
+        }
+
+        /**********************************************
+         Construct the cluster graph CG for specific radius r
+        ***********************************************/
+
+        AdjacencyListDense CG(N); // cluster graph
+
+        double d;
+
+
+        std::vector<index_t> LCCenters;
+        std::vector<index_t> LNC(N);
+        std::vector<Edge> LInC(N*N);
+        std::vector<Edge> LOutC1(N*N);
+        std::vector<Edge> LOutC2(N*N);
+        int InM, OutM1, OutM2;
+
+        for (int i = 0; i < N; i++)
         {
-            // **********************************************
-            // Construct the graph CG
-            // *********************************************
+//                v = CG.new_node(i);
+            LNC[i] = i;
+        }
+        LCCenters.clear();
 
-            double d;
-            node u, v, w;
-            edge e, ee;
+        InM = 0; OutM1 = 0; OutM2 = 0;
+        std::vector<bool>   Mark(N, false);
+        std::vector<bool>   IsClusterCenter(N, false);
+        std::vector<double> dist(N, INF);
+        std::vector<index_t>   pred(N);
+        std::vector< std::vector< std::pair<index_t, double> > > cluster_neighbours(N);
+        std::list<index_t> C1;
+        std::list<index_t> C2;
+        std::list<index_t> C3;
 
-            CG.clear();
-            int N = G.number_of_nodes();
-            for (int i = 0; i < N; i++)
-            {
-                v = CG.new_node(i);
-                LNC[i] = v;
-            }
-            LCCenters.clear();
+        for(index_t v=0; v<N; ++v) {
+            if(!Mark[v]) {
+                LCCenters.push_back(v);
+                IsClusterCenter[v] = true;
 
-            InM = 0; OutM1 = 0; OutM2 = 0;
-            node_array<bool>   Mark(G);
-            node_array<bool>   IsClusterCenter(G);
-            node_array<double> dist(G);
-            node_array<edge>   pred(G);
-            node_array< list< two_tuple<node, double> > > cluster_neighbours(G);
-            list<node> C1;
-            list<node> C2;
-            list<node> C3;
-            node_pq<double> PQ(G);
-
-            forall_nodes(v, G) Mark[v] = false;
-            forall_nodes(v, G) IsClusterCenter[v] = false;
-            forall_nodes(v, G) pred[v] = nil;
-            forall_nodes(v, G) dist[v] = MAXDOUBLE;
-
-            forall_nodes(v, G)
-            {
-                if (!Mark[v])
+                dn97::SINGLE_SOURCE(P, G, v, delta * W, W, C1, C2, C3, dist, pred);
+                index_t u;
+                // add intra-cluster edges
+                while (!C1.empty())
                 {
-                    LCCenters.append(v);
-                    IsClusterCenter[v] = true;
-
-                    SINGLE_SOURCE(G, v, delta*W, W, C1, C2, C3, dist, pred, PQ);
-
-                    // add intra-cluster edges
-                    while (!C1.empty())
-                    {
-                        u = C1.pop();
-                        edge e = CG.new_edge(LNC[G[u]], LNC[G[v]], dist[u]);
-                        LInC[InM++] = e;
-                        Mark[u] = true;
-                    }
-
-                    // save information about inter-cluster neighbours
-                    while (!C2.empty())
-                    {
-                        u = C2.pop();
-                        two_tuple<node, double> cn(v, dist[u]);
-                        cluster_neighbours[u].append( cn );
-                    }
-
-                    // reset node labels
-                    while (!C3.empty())
-                    {
-                        u = C3.pop();
-                        pred[u] = nil;
-                        dist[u] = MAXDOUBLE;
-                    }
-                }
-            }
-
-            // add inter-cluster edges of type I
-            // i.e., connect cluster centers within distance W from each other
-
-            forall(v, LCCenters)
-            {
-                two_tuple<node, double> cn;
-                forall(cn, cluster_neighbours[v])
-                {
-                    u = cn.first();   // node
-                    d = cn.second();  // shortest path distance
-                    assert (IsClusterCenter[u]);
-                    assert (IsClusterCenter[v]);
-                    edge e = CG.new_edge(LNC[G[v]], LNC[G[u]], d);
-                    LOutC1[OutM1++] = e;
-                }
-            }
-
-            // add inter-cluster edges of type II
-            // i.e., for each edge in G, add an edge between the respective cluster centers
-            forall_edges(e, G)
-            {
-                node cu, cv;
-                edge eu, ev;
-                list<edge> clu, clv;
-
-                u = LNC[G[G.source(e)]]; // first endpoint in GC
-                v = LNC[G[G.target(e)]]; // second endpoint in GC
-
-                // get list of cluster centers that node u belongs to
-                if (IsClusterCenter[G.source(e)])
-                    clu.append( (edge) 0); // dummy edge
-                else
-                    forall_out_edges(ee, u) clu.append(ee);
-
-                // get list of cluster centers that node v belongs to
-                if (IsClusterCenter[G.target(e)])
-                    clv.append( (edge) 0); // dummy edge
-                else
-                    forall_out_edges(ee, v) clv.append(ee);
-
-                //forall(ee, clu) { if (ee != 0) cerr << CG[CG.target(ee)] << " "; } cerr << endl;
-                //forall(ee, clv) { if (ee != 0) cerr << CG[CG.target(ee)] << " "; } cerr << endl;
-
-                forall(eu, clu)
-                forall(ev, clv)
-                {
-                    if (eu != 0) cu = CG.target(eu); else cu = u;
-                    if (ev != 0) cv = CG.target(ev); else cv = v;
-                    if (cu != cv) // only distinct node clusters
-                    {
-                        //cerr << "cluster " << CG[cu] << " and " << CG[cv] << endl;
-
-                        // are cluster centers already connected? if so, then get edge
-                        edge uve = (edge) 0;
-                        forall_inout_edges(ee, cu)
-                        if (cv == CG.opposite(cu, ee)) { uve = ee; break; }
-
-                        // add edge if necessary
-                        if (uve == (edge) 0)
-                        {
-                            uve = CG.new_edge(LNC[G[cu]], LNC[G[cv]], MAXDOUBLE);
-                            LOutC2[OutM2++] = uve;
-                            if (DEBUG) cerr << "edge added!!\n";
-                        }
-
-                        // update distance
-
-                        double newd = G[e];
-                        if (!IsClusterCenter[G.source(e)])
-                            newd += CG[eu]; // add distance to cluster center
-                        if (!IsClusterCenter[G.target(e)])
-                            newd += CG[ev]; // add distance to cluster center
-
-                        if (CG[uve] > newd) {
-                            if (DEBUG) cerr << "distance updated!!\n";
-                            CG[uve] = newd;
-                        }
-                    }
-                }
-            }
-
-        } // end CLUSTER_GRAPH
-
-
-        int clusterGraphMain(int argc, char *argv[])
-        {
-            int N, M, D, param = 1;
-            double W = 1.0;
-            double Delta = 0.8;		/* Delta value for cluster */
-
-            while (param < argc)
-            {
-                if ((!strcmp(argv[param],"-h")) || (!strcmp(argv[param],"-H")))
-                    // Usage
-                { fprintf(stderr, "%s\n", usage); return 0; }
-                if ((!strcmp(argv[param],"-w")) || (!strcmp(argv[param],"-W")))
-                    // Cluster radius
-                    W = atof(argv[++param]);
-                if ((!strcmp(argv[param],"-l")) || (!strcmp(argv[param],"-L")))
-                    // Delta
-                    Delta = atof(argv[++param]);
-                if ((!strcmp(argv[param],"-d")) || (!strcmp(argv[param],"-D")))
-                    // turn on DEBUG
-                    DEBUG = true;
-                param++;
-            }
-
-            /**********************************************
-                      Read graph G from stdin
-            ***********************************************/
-
-            cin >> D;
-            cin >> N;
-            cin >> M;
-            double *P = new double[N*D];
-            for (int i = 0; i < N; i++)
-            {
-                for (int dim = 0; dim < D; dim++)
-                    cin >> P[i*D + dim];
-            }
-
-            simple_edge* Edges = new simple_edge[M];
-            for (int i = 0; i < M; i++)
-                cin >> Edges[i].idx1 >> Edges[i].idx2 >> Edges[i].dist;
-
-            float total_cpu = used_time();
-            double sp_length = 0.0;
-
-            /**********************************************
-                Construct the graph G (only works for 2d)
-            ***********************************************/
-
-
-            GRAPH<int, double> G; // declared globally
-            G.clear();
-            node v, w;
-            edge e, f;
-
-            if (D == 2)
-            {
-                // create the input graph G
-                array<node> LN(N);
-                for (int i = 0; i < N; i++)
-                {
-                    v = G.new_node(i);
-                    LN[i] = v;
+                    u = C1.back(); // changed from pop to pop_back, maybe an issue down the road
+                    C1.pop_back();
+                    Edge e = std::make_pair(LNC[u], LNC[v]);
+                    CG[e.first].insert(e.second);
+                    CG[e.second].insert(e.first);
+                    LInC[InM++] = e;
+                    Mark[u] = true;
                 }
 
-                array<edge> LE(2*M);
-                for (int i = 0; i < M; i++)
+                // save information about inter-cluster neighbours
+                while (!C2.empty())
                 {
-                    e = G.new_edge(LN[Edges[i].idx1], LN[Edges[i].idx2]);
-                    LE[i] = e;
-                    e = G.new_edge(LN[Edges[i].idx2], LN[Edges[i].idx1]);
-                    LE[i+M] = e;
+                    u = C2.back();
+                    C2.pop_back();
+                    std::pair<index_t, double> cn(v, dist[u]);
+                    cluster_neighbours[u].push_back( cn );
                 }
 
-                edge_array<double> Cost(G);
-                forall_edges(e,G)
+                // reset node labels
+                while (!C3.empty())
                 {
-                    double temp = lp_distance(P, D, D*G[G.source(e)], D*G[G.target(e)]);
-                    Cost[e] = temp; G[e] = temp;
+                    u = C3.back();
+                    C3.pop_back();
+                    pred[u] = SIZE_T_MAX;
+                    dist[u] = INF;
                 }
-
-                // sort the edges of G by length
-                list<edge> L;
-                L.clear();
-                for (int i=0; i < M; i++)
-                    L.append(LE[i]);
-                cmp_edgesA<double> cmp(Cost);
-                L.sort(cmp);
-
-                /**********************************************
-                 Construct the cluster graph CG for specific radius r
-                ***********************************************/
-
-                GRAPH<int, double> CG; // cluster graph
-                list<node> LCCenters;
-                array<node> LNC(N);
-                array<edge> LInC(N*N);
-                array<edge> LOutC1(N*N);
-                array<edge> LOutC2(N*N);
-                int InM, OutM1, OutM2;
-
-                CLUSTER_GRAPH(G, Delta, W, CG, LCCenters, LNC,
-                              LInC, LOutC1, LOutC2, InM, OutM1, OutM2);
-
-                total_cpu = used_time(total_cpu);
-
-                // output CG for showgraph
-                cout << D << endl << N << endl << InM + OutM1 + OutM2 << endl;
-                cout << LCCenters.length() << endl << Delta*W << endl;
-                cout << InM << endl << OutM1 << endl << OutM2 << endl;
-                for (int i = 0; i < N; i++)
-                    cout << P[i*D] << ' ' << P[i*D+1] << endl;
-                for (int i = 0; i < InM; i++)
-                    cout << CG[CG.source(LInC[i])] << ' ' << CG[CG.target(LInC[i])]
-                         << ' ' << CG[LInC[i]] << endl;
-                for (int i = 0; i < OutM1; i++)
-                    cout << CG[CG.source(LOutC1[i])] << ' ' << CG[CG.target(LOutC1[i])]
-                         << ' ' << CG[LOutC1[i]] << endl;
-                for (int i = 0; i < OutM2; i++)
-                    cout << CG[CG.source(LOutC2[i])] << ' ' << CG[CG.target(LOutC2[i])]
-                         << ' ' << CG[LOutC2[i]] << endl;
-                forall(v,LCCenters)
-                cout << G[v] << endl;
-
-                // summary of results
-                fprintf(stderr,
-                        "ClusterGraph:  Edges(In) \n");
-                fprintf(stderr,
-                        "@6              %1d\n", M);
-                fprintf(stderr,
-                        "ClusterGraph:  Edges(Out) IntraEdges Inter1Edges Inter2Edges \n");
-                fprintf(stderr,
-                        "@7              %1d        %d         %d          %d\n",
-                        InM + OutM2 + (OutM1/2), InM, OutM1/2, OutM2);
-
-                fprintf(stderr, "ClusterGraph:  NumCenters Length TotalCPU NormTotCPU\n");
-                fprintf(stderr, "@8              %1d        %.6f   %.2f   %.2f\n",
-                        LCCenters.length(), sp_length, total_cpu,
-                        1000000.0 * total_cpu / ((double) N * log10( (double) N)));
             }
         }
 
+        // add inter-cluster edges of type I
+        // i.e., connect cluster centers within distance W from each other
 
-        static char *usage =
-                "\nUsage: clusterspanner\n"
-                "Compute a cluster spanner and show on the screen.\n"
-                "The graph is read from standard input (e.g., from another program).\n";
-
-        struct sp_statistics SpStats;
-
-        double delta = 0.2;
-        double alpha = 2;
-        int number_i, number_I, number_II;
-
-        void SINGLE_SOURCE(const GRAPH<int,double>& G,     // input graph
-                           node s,                         // source node
-                           double R1,                      // small radius
-                           double R2,                      // large radius (R1 <= R2)
-                           list<node>& C1,                 // nodes within dist <= R1
-                           list<node>& C2,                 // nodes within R1 < dist <= R2
-                           list<node>& C3,                 // nodes having updated labels
-                           node_array<double>& dist,       // distance from source
-                           node_pq<double>& PQ,            // priority queue
-                           bool AddtoC1                    // add to C1 or not
-        )
+        for(index_t v : LCCenters)
         {
-            node v;
-            edge e;
-
-            dist[s] = 0;
-            PQ.insert(s, 0);
-            C3.push(s);
-
-            while (!PQ.empty())
+//                std::pair<index_t, double> cn;
+            for( auto cn : cluster_neighbours[v])
             {
-                node u = PQ.del_min(); // add u to S
-                double du = dist[u];
-                if (du <= R1)
-                {
-                    if (AddtoC1) C1.push(u);  // add u to set C1
-                }
-                else
-                {
-                    if (du <= R2)
-                        C2.push(u);   // add u to set C2
-                    else
-                        break;        // large cluster radius exceeded - exit
-                }
+                index_t u = cn.first;   // node
+                double d = cn.second;  // shortest path distance
+                assert (IsClusterCenter[u]);
+                assert (IsClusterCenter[v]);
+                Edge e = std::make_pair(LNC[u], LNC[v]);
+                CG[e.first].insert(e.second);
+                CG[e.second].insert(e.first);
+                LOutC1[OutM1++] = e;
+            }
+        }
 
-                forall_adj_edges(e, u)
+        // add inter-cluster edges of type II
+        // i.e., for each edge in G, add an edge between the respective cluster centers
+        forall_edges(e, G)
+        {
+            node cu, cv;
+            Edge eu, ev;
+            list<Edge> clu, clv;
+
+            u = LNC[G[G.source(e)]]; // first endpoint in GC
+            v = LNC[G[G.target(e)]]; // second endpoint in GC
+
+            // get list of cluster centers that node u belongs to
+            if (IsClusterCenter[G.source(e)])
+                clu.append( (Edge) 0); // dummy edge
+            else
+                forall_out_edges(ee, u) clu.append(ee);
+
+            // get list of cluster centers that node v belongs to
+            if (IsClusterCenter[G.target(e)])
+                clv.append( (Edge) 0); // dummy edge
+            else
+                forall_out_edges(ee, v) clv.append(ee);
+
+            //forall(ee, clu) { if (ee != 0) cerr << CG[CG.target(ee)] << " "; } cerr << endl;
+            //forall(ee, clv) { if (ee != 0) cerr << CG[CG.target(ee)] << " "; } cerr << endl;
+
+            forall(eu, clu)
+            forall(ev, clv)
+            {
+                if (eu != 0) cu = CG.target(eu); else cu = u;
+                if (ev != 0) cv = CG.target(ev); else cv = v;
+                if (cu != cv) // only distinct node clusters
                 {
-                    v = G.opposite(u, e); // makes it work for ugraphs
-                    double c = du + G[e];
-                    if (dist[v] == MAXDOUBLE && v != s )
+                    //cerr << "cluster " << CG[cu] << " and " << CG[cv] << endl;
+
+                    // are cluster centers already connected? if so, then get edge
+                    edge uve = (edge) 0;
+                    forall_inout_edges(ee, cu)
+                    if (cv == CG.opposite(cu, ee)) { uve = ee; break; }
+
+                    // add edge if necessary
+                    if (uve == (edge) 0)
                     {
-                        PQ.insert(v, c); // first message to v
-                        C3.push(v);
+                        uve = CG.new_edge(LNC[G[cu]], LNC[G[cv]], MAXDOUBLE);
+                        LOutC2[OutM2++] = uve;
+                        if (DEBUG) cerr << "edge added!!\n";
                     }
-                    else if (c < dist[v])
-                        PQ.decrease_p(v, c); // better path
-                    else continue;
-                    dist[v] = c;
+
+                    // update distance
+
+                    double newd = G[e];
+                    if (!IsClusterCenter[G.source(e)])
+                        newd += CG[eu]; // add distance to cluster center
+                    if (!IsClusterCenter[G.target(e)])
+                        newd += CG[ev]; // add distance to cluster center
+
+                    if (CG[uve] > newd) {
+                        if (DEBUG) cerr << "distance updated!!\n";
+                        CG[uve] = newd;
+                    }
                 }
             }
+        }
+    }
 
-            // if (!PQ.empty()) PQ.clear(); // clear PQ - GIVES AN ERROR WHEN DELETING PQ
-            while (!PQ.empty()) PQ.del_min(); // clear PQ
+    void DN97(const greedy::input_t& in, greedy::output_t& out,
+              double t = 1.5, double delta = 0.2, double alpha = 2.0) {
+        using namespace dn97;
 
-        } // end SINGLE_SOURCE
+        const auto& P = in;
+        index_t N = P.size();
+        index_t M;
+        index_t D = 2;
+
+        std::vector<Edge> clusterGraphEdges;
+        ClusterGraph(P, clusterGraphEdges);
 
 
-        void CLUSTER_SPANNER(GRAPH<int,double>& G,      // input graph
-                             double t,                  // stretch factor
-                             GRAPH<int,double>& SG      // resulting spanner graph
-        )
+        AdjacencyListDense G(N);
+        std::transform(clusterGraphEdges.begin(), clusterGraphEdges.end(), std::inserter(G,G.end()),
+            [&G](const Edge& e) {
+                G[e.first].insert(e.second);
+                G[e.second].insert(e.first);
+            });
+
+        //**********************************************
+        // Construct the spanner graph SG
+        // *********************************************
+
+        AdjacencyListDense SG;
+
+
+
+
+        std::vector<index_t> LNS(N);
+
+        SG.clear();
+        for (int i = 0; i < N; i++)
         {
-            node v, w;
-            edge e, ee;
+            LNS[i] = i;
+        }
 
-            // **********************************************
-            // Construct the graphs SG
-            // *********************************************
+        // sort the edges of G by length
+        std::map<Edge,double> Cost;
+        std::transform(clusterGraphEdges.begin(),clusterGraphEdges.end(), std::inserter(Cost,Cost.end()),
+            [&P](const Edge& e) {
+                return std::make_pair(e, getDistance(P[e.first],P[e.second]));
+            });
 
-            int N = G.number_of_nodes();
-            array<node> LNS(N);
+        std::vector<Edge> clusterGraphEdgesSorted(clusterGraphEdges);
+        std::sort(clusterGraphEdgesSorted.begin(), clusterGraphEdgesSorted.end(),
+            [&Cost] (const Edge& a, const Edge& b) {
+                return Cost[a] < Cost[b];
+            });
 
-            SG.clear();
-            for (int i = 0; i < N; i++)
+        double LMax = Cost[clusterGraphEdgesSorted.back()];
+        int bucket  = 0;
+        double R0   = LMax / (double) N, R = R0;
+
+        std::vector<double> dist(N, INF);
+
+        std::vector< std::list<Edge> > AdjEdges(N);
+        std::map<Edge,bool> InSpanner;
+
+        auto ee = clusterGraphEdgesSorted.begin();
+        for (ee=ee; ee!=clusterGraphEdgesSorted.end() && (Cost[*ee] <= R0); ++ee)
+        {
+            SG[LNS[(*ee).first]].insert( LNS[(*ee).second]);
+            SG[LNS[(*ee).second]].insert(LNS[(*ee).first]);
+            InSpanner[*ee] = true;
+        }
+        for (ee=ee; ee!=clusterGraphEdgesSorted.end(); ++ee)
             {
-                v = SG.new_node(i);
-                LNS[i] = v;
-            }
-
-            edge_array<double> Cost(G);
-            forall_edges(e, G)
-            Cost[e] = G[e];
-
-            // sort the edges of G by length
-            G.sort_edges(Cost);
-
-            double LMax = G[G.last_edge()];
-            int bucket  = 0;
-            double R0   = LMax / (double) N, R = R0;
-
-            node_array<double> dist(SG, MAXDOUBLE);
-            node_pq<double> PQ(SG);
-
-            node_array< list<edge> > AdjEdges(SG);
-            edge_array<bool> InSpanner(G,false);
-
-            ee = G.first_edge();
-            while ((ee) && (G[ee] <= R0))
-            {
-                SG.new_edge(LNS[G[G.source(ee)]], LNS[G[G.target(ee)]], G[ee]);
-                SG.new_edge(LNS[G[G.target(ee)]], LNS[G[G.source(ee)]], G[ee]);
-                // cerr << "Adding short edges .." << endl;
-                InSpanner[ee] = true;
-                ee = G.succ_edge(ee);
-            }
-            while (ee)
-            {
-                while (G[ee] > R)
+                while (Cost[*ee] > R)
                     R = alpha*R;
 
                 // cerr << "Processing new bucket .." << endl;
                 // clear bucket
-                forall_nodes(v,SG)
-                AdjEdges[v].clear();
+                for( auto v: AdjEdges)
+                    v.clear();
 
                 // collect edges from this bucket
-                while ((ee) && (G[ee] <= R))
+//                while ((*ee) && (Cost[*ee] <= R))
+                for (ee=ee; ee!=clusterGraphEdgesSorted.end() && (Cost[*ee] <= R); ++ee)
                 {
                     // cerr << "Added to AdjEdge of " << G[G.source(ee)] << " and "
                     //      << G[G.target(ee)] << endl;
-                    node su = LNS[G[G.source(ee)]];
-                    node sv = LNS[G[G.target(ee)]];
-                    AdjEdges[su].append(ee);
-                    AdjEdges[sv].append(ee);
-                    ee = G.succ_edge(ee);
+                    index_t su = LNS[ee->first];
+                    index_t sv = LNS[ee->second];
+                    AdjEdges[su].push_back(*ee);
+                    AdjEdges[sv].push_back(*ee);
                 }
 
-                node u, uu, v, w;
+                index_t u, uu, v, w;
 
-                node_array<bool>   Mark(SG,false);
-                node_array<double> dist(SG,MAXDOUBLE);
-                list<node> C1;
-                list<node> C2;
-                list<node> C3;
+                std::vector<bool> Mark(N,false);
+                std::vector<double> dist(N,INF);
+                std::list<index_t> C1;
+                std::list<index_t> C2;
+                std::list<index_t> C3;
                 node_pq<double> PQ(SG);
 
-                forall_nodes(v, SG)
+                for(auto v : P ){}
                 if (!Mark[v])
                 {
-                    if (!C1.empty()) C1.clear();
-                    if (!C2.empty()) C2.clear();
+                    C1.clear();
+                    C2.clear();
                     while (!C3.empty())
                     {
-                        uu = C3.pop();
-                        dist[uu] = MAXDOUBLE;
+                        uu = C3.back();
+                        C3.pop_back();
+                        dist[uu] = INF;
                     }
-                    SINGLE_SOURCE(SG, v, delta*R, alpha*t*R, C1, C2, C3, dist, PQ, true);
+                    SINGLE_SOURCE(P, SG, v, delta*R, alpha*t*R, C1, C2, C3, dist, {}, true);
 
                     // process edges for this cluster center v
                     while (!C1.empty())
                     {
-                        u = C1.pop();
+                        u = C1.back();
+                        C1.pop_back();
                         Mark[u] = true;
 
-                        forall(e,AdjEdges[u])
+                        for(auto e : AdjEdges[u])
                         {
                             if (InSpanner[e]) continue;
                             if (SG[u] == G[G.source(e)])
@@ -663,110 +465,8 @@ namespace spanner {
                     } // while
                 } // if (!Mark)
             } // while (e)
-        }
 
 
-        int clusterSpannerMain(int argc, char *argv[])
-        {
-            int N, M, D, param = 1;
-            double t = 1.5;
-
-            while (param < argc)
-            {
-                if ((!strcmp(argv[param],"-h")) || (!strcmp(argv[param],"-H")))  // Usage
-                { fprintf(stderr, "%s\n", usage); return 0; }
-
-                if (!strcmp(argv[param],"-t"))  // Stretch factor
-                    t = atof(argv[++param]);
-
-                if (!strcmp(argv[param],"-d"))  // Delta
-                    delta = atof(argv[++param]);
-
-                if (!strcmp(argv[param],"-a"))  // Alpha
-                    alpha = atof(argv[++param]);
-
-                param++;
-            }
-
-            /**********************************************
-                      Read graph G from stdin
-            ***********************************************/
-
-            cin >> D;
-            cin >> N;
-            cin >> M;
-            double *P = new double[N*D];
-            for (int i = 0; i < N; i++)
-            {
-                for (int dim = 0; dim < D; dim++)
-                    cin >> P[i*D + dim];
-            }
-
-            simple_edge* Edges = new simple_edge[M];
-            for (int i = 0; i < M; i++)
-                cin >> Edges[i].idx1 >> Edges[i].idx2 >> Edges[i].dist;
-
-            float total_cpu = used_time();
-            double sp_length = 0.0;
-
-            /**********************************************
-                Construct the graph G (only works for 2d)
-            ***********************************************/
-
-            GRAPH<int, double> G;
-            G.clear();
-            node v, w;
-            edge e, f;
-
-            if (D != 2)
-            {
-                cerr << "clusterspanner: Cannot deal with dimension higher than 2" << endl;
-                exit(0);
-            }
-
-            // create the input graph G
-            array<node> LN(N);             // map index i -> vertex of G
-            for (int i = 0; i < N; i++)
-            {
-                v = G.new_node(i);
-                LN[i] = v;
-            }
-
-            for (int i = 0; i < M; i++)
-            {
-                G.new_edge(LN[Edges[i].idx1], LN[Edges[i].idx2]);
-                G.new_edge(LN[Edges[i].idx2], LN[Edges[i].idx1]);
-            }
-
-            forall_edges(e, G)
-            G[e] = lp_distance(P, D, D*G[G.source(e)], D*G[G.target(e)]);
-
-            //**********************************************
-            // Construct the spanner graph SG
-            // *********************************************
-
-            GRAPH<int, double> SG;
-            CLUSTER_SPANNER(G, t, SG);
-
-            total_cpu = used_time(total_cpu);
-
-            // output CG for showgraph
-            cout << D << endl << N << endl << SG.number_of_edges() << endl;
-            for (int i = 0; i < N; i++)
-                cout << P[i*D] << ' ' << P[i*D+1] << endl;
-            forall_edges(e, SG)
-            cout << SG[SG.source(e)] << ' ' << SG[SG.target(e)]
-                 << ' ' << SG[e] << endl;
-
-            // summary of results
-            fprintf(stderr, "ClusterSpanner:  SF(reqd) NumEdges(In)\n");
-            fprintf(stderr, "@2              %.2f     %1d    \n", t, M);
-
-            fprintf(stderr, "ClusterSpanner:  NumEdges(Out) Length TotalCPU NormTotCPU\n");
-            fprintf(stderr, "@3              %1d           %.6f   %.2f   %.2f\n",
-                    SG.number_of_edges()/2, sp_length, total_cpu,
-                    1000000.0 * total_cpu / ((double) N * log10( (double) N)));
-        }
 
     }
 }

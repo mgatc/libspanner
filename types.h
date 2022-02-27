@@ -1,7 +1,13 @@
 #ifndef LIBSPANNER_TYPES_H
 #define LIBSPANNER_TYPES_H
 
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <variant>
 #include <vector>
+
+#include <boost/functional/hash.hpp>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
@@ -29,6 +35,9 @@ namespace spanner {
     typedef boost::hash<index_tPair> index_tPairHash;
     typedef std::unordered_set<index_tPair, index_tPairHash> index_tPairSet;
     typedef std::unordered_map<index_tPair, bool, index_tPairHash> index_tPairMap;
+
+    typedef std::vector<std::unordered_set<index_t>> AdjacencyListDense;
+    typedef std::unordered_map<index_t,std::unordered_set<index_t>> AdjacencyListSparse;
 
 }
 
