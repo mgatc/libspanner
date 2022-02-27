@@ -11,9 +11,9 @@
 #include <CGAL/Spatial_sort_traits_adapter_2.h>
 #include <queue>
 
-#include "include/libspanner/constants.h"
-#include "include/libspanner/types.h"
-#include "include/libspanner/utilities.h"
+#include "../constants.h"
+#include "../types.h"
+#include "utilities.h"
 
 namespace spanner {
 

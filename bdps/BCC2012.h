@@ -44,19 +44,19 @@ namespace spanner {
         };
 
         std::pair<cone_t,cone_t> getCone(const std::vector<VertexHandle> &handles,
-                                    const std::vector<index_t> &closest,
-                                    const size_t p,
-                                    const size_t q,
-                                    const cone_t numCones) {
+                                         const std::vector<index_t> &closest,
+                                         const size_t p,
+                                         const size_t q,
+                                         const cone_t numCones) {
             const auto alpha = static_cast<number_t>(2 * PI / static_cast<number_t>(numCones));
             std::vector<cone_t> cone(3);
             for(int i=-1; i<2; ++i ) {
                 cone[i+1] = static_cast<cone_t>((2*PI
                                                  + i*EPSILON
                                                  + getAngle(handles[closest[p]]->point(),
-                                                           handles[p]->point(),
-                                                           handles[q]->point()))
-                                               / alpha) % numCones;
+                                                            handles[p]->point(),
+                                                            handles[q]->point()))
+                                                / alpha) % numCones;
             }
             return std::make_pair( cone[1], cone[0]!=cone[1] ? cone[0] : cone[2] );
         }
@@ -72,34 +72,46 @@ namespace spanner {
                                        const index_t p,
                                        const index_t q,
                                        std::pair<cone_t,cone_t> &cone) {
-            if (closest.at(p) == SIZE_T_MAX) { // AlgorithmFirst, make sure the closest vertex is set
-                closest[p] = q;
-            }
-            cone = getCone(handles, closest, p, q, NUM_CONES);
-
             bool pGivenConeFilled = filled.at(p)[cone.first],
                     pPrevConeFilled = filled.at(p)[cone.second];
 
             return !pGivenConeFilled && !pPrevConeFilled; ////////
         }
+        void setClosestInCone(std::vector<index_t> &closest,const index_t p,const index_t q){
+            if (closest.at(p) == SIZE_T_MAX) { // AlgorithmFirst, make sure the closest vertex is set
+                closest[p] = q;
+            }
+        }
+        void setClosestInCones(std::vector<index_t> &closest,const index_t p,const index_t q) {
+            setClosestInCone(closest,p,q);
+            setClosestInCone(closest,q,p);
+        }
 
         template<cone_t DEGREE, cone_t NUM_CONES = DEGREE + 1>
-        inline void updateVertexConeStatus(std::vector<std::bitset<NUM_CONES>> &filled,
-                                           std::vector<WedgeParameters> &wedge,
-                                           const index_t p,
-                                           const index_t q,
-                                           const std::pair<cone_t,cone_t>& cone) {
+        inline void updateVertexConeStatusWedge(std::vector<WedgeParameters> &wedge,
+                                                const index_t p,
+                                                const index_t q,
+                                                const std::pair<cone_t,cone_t>& cone) {
             if (cone.second!=cone.first) {
                 wedge.push_back({p, q, cone.second});
-                filled.at(p)[cone.second] = true;
             }
 
             wedge.push_back({p, q, cone.first});
+        }
+
+        template<cone_t DEGREE, cone_t NUM_CONES = DEGREE + 1>
+        inline void updateVertexConeStatusFilled(std::vector<std::bitset<NUM_CONES>> &filled,
+                                                 const index_t p,
+                                                 const std::pair<cone_t,cone_t>& cone) {
+            if (cone.second!=cone.first) {
+                filled.at(p)[cone.second] = true;
+            }
+
             filled.at(p)[cone.first] = true;
         }
 
         std::tuple<index_t,index_t,index_t> getNeighborsInCone(const index_t p, const index_t q, const cone_t cone, const cone_t numCones,
-                                                          const DelaunayL2& DT, const std::vector<VertexHandle>& handles, const std::vector<index_t>& closest,
+                                                               const DelaunayL2& DT, const std::vector<VertexHandle>& handles, const std::vector<index_t>& closest,
                                                                std::vector<index_t>& Q) {
 //            const auto ALPHA = static_cast<number_t>(2 * PI / static_cast<number_t>(numCones));
 
@@ -129,18 +141,27 @@ namespace spanner {
         }
         void addEasyEdges(const index_t j, const index_t i, const index_t k,
                           const std::vector<index_t>& Q, std::vector<Edge>& add,
+                          std::vector<size_t> &vertexDegree,
+                          const size_t maxDegree,
                           const std::unordered_set<index_t>& Forbidden = {}) {
 
             // Line 4: Add select edges
             if (i >= 2)
                 for (size_t n = j+1; n <= i-2; ++n)
-                    if (!contains(Forbidden, Q[n]) && !contains(Forbidden, Q[n+1]))
-                        add.emplace_back(Q[n], Q[n+1]);
-
+                    if (!contains(Forbidden, Q[n]) && !contains(Forbidden, Q[n+1])
+                        && vertexDegree[Q[n]] < maxDegree && vertexDegree[Q[n+1]] < maxDegree) {
+                        add.emplace_back(Q[n], Q[n + 1]);
+                        vertexDegree[Q[n]]++;
+                        vertexDegree[Q[n+1]]++;
+                    }
             if (k >= 2)
                 for (size_t n = i+1; n <= k-2; ++n)
-                    if (!contains(Forbidden, Q[n]) && !contains(Forbidden, Q[n+1]))
-                        add.emplace_back(Q[n], Q[n+1]);
+                    if (!contains(Forbidden, Q[n]) && !contains(Forbidden, Q[n+1])
+                        && vertexDegree[Q[n]] < maxDegree && vertexDegree[Q[n+1]] < maxDegree) {
+                        add.emplace_back(Q[n], Q[n + 1]);
+                        vertexDegree[Q[n]]++;
+                        vertexDegree[Q[n+1]]++;
+                    }
         }
 /*
  *  Performs algorithm "wedge" with the exception of line 1. The
@@ -154,6 +175,7 @@ namespace spanner {
         [[maybe_unused]] inline void wedge([[maybe_unused]] const DelaunayL2 &DT,
                                            [[maybe_unused]] const std::vector<VertexHandle> &handles,
                                            [[maybe_unused]] const std::vector<index_t> &closest,
+                                           [[maybe_unused]] std::vector<size_t> &vertexDegree,
                                            [[maybe_unused]] const WedgeParameters &params,
                                            [[maybe_unused]] std::vector<Edge> &addToE_star) {
             //assert(DEGREE == 6 || DEGREE == 7);
@@ -163,6 +185,7 @@ namespace spanner {
         inline void wedge<7>(const DelaunayL2 &DT,
                              const std::vector<VertexHandle> &handles,
                              const std::vector<index_t> &closest,
+                             std::vector<size_t> &vertexDegree,
                              const WedgeParameters &params,
                              std::vector<Edge> &addToE_star) {
             const cone_t numCones = 8;
@@ -175,7 +198,7 @@ namespace spanner {
             std::tie(j,i,k) = getNeighborsInCone(p,q,cone,numCones,DT,handles,closest,Q);
 
             std::vector<Edge> add;
-            addEasyEdges(j,i,k,Q,add);
+            addEasyEdges(j,i,k,Q,add,vertexDegree, 7);
 //            if (i>0) for (index_t m=j+1; m<i-1; ++m) {
 //                addToE_star.emplace_back(Q[m],Q[m+1]);
 //            }
@@ -184,16 +207,17 @@ namespace spanner {
 //                addToE_star.emplace_back(Q[m],Q[m+1]);
 //            }
 
-            if (i!=j && i+1<k && getAngle(handles[Q[i+1]]->point(),handles[Q[i]]->point(),handles[p]->point()) > PI_OVER_TWO ) {
-               add.emplace_back(Q[i],Q[i+1]);
+            if (i!=j && i+1<k && getAngle(handles[Q[i+1]]->point(),handles[Q[i]]->point(),handles[p]->point()) > PI_OVER_TWO) {
+                add.emplace_back(Q[i],Q[i+1]);
             }
-            if (i!=k && i>j+1 && getAngle(handles[p]->point(),handles[Q[i]]->point(),handles[Q[i-1]]->point()) > PI_OVER_TWO ) {
+
+            if (i!=k && i>j+1 && getAngle(handles[p]->point(),handles[Q[i]]->point(),handles[Q[i-1]]->point()) > PI_OVER_TWO) {
                 add.emplace_back(Q[i],Q[i-1]);
             }
 
             for( auto e : add) {
                 const index_t a = e.first,
-                              b = e.second;
+                        b = e.second;
 //                if( a==TARGET||b==TARGET ) {
 //                    tikz.drawEdge(handles[a]->point(),handles[b]->point(), canonicalEdgeOptions);
 //                    tikz.drawEdge(handles[p]->point(),handles[q]->point(), tikz.highlightEdgeOptions);
@@ -207,6 +231,7 @@ namespace spanner {
         inline void wedge<6>(const DelaunayL2 &DT,
                              const std::vector<VertexHandle> &handles,
                              const std::vector<index_t> &closest,
+                             std::vector<size_t> &vertexDegree,
                              const WedgeParameters &params,
                              std::vector<Edge> &addToE_star) {
             const cone_t numCones = 7;
@@ -241,38 +266,38 @@ namespace spanner {
 
             std::vector<Edge> add;
 
-            addEasyEdges(j,i,k,Q,add,Q_prime);
+            addEasyEdges(j,i,k,Q,add,vertexDegree,6,Q_prime);
 
-            for( auto e : add) {
-                const index_t a = e.first,
-                        b = e.second;
-//                if( a==TARGET || b == TARGET ) {
-//                    cout<<"\\texttt{Wedge}($"<<p<<","<<q<<"$) ($\\mathrm{cone}="<<cone<<", j="<<Q[j]<<", i="<<Q[i]<<", k="<<Q[k]<<"\\\\\n";
-//                    for( size_t m=0; m<Q.size(); ++m ) {
-//                        auto angle = getAngle(handles[Q[m+1]]->point(),
-//                                              handles[Q[m]]->point(),
-//                                              handles[Q[m-1]]->point());
-//                        cout<<"$"<<Q[m]<<"$ & $"
-//                            <<(0 < m && m < Q.size()-1 ? to_string(angle) : "\\mathrm{NA}") <<"$ & "
-//                            <<(angle<SIX_PI_OVER_SEVEN&&m!=i&&m!=j&&m!=k ? "T":"F") << " & "
-//                            <<(0<m &&( (Q[m]==b&&Q[m-1]==a) ||( Q[m]==a&&Q[m-1]==b)) ? "add" : "omit")<<"\\\\\n";
-//                    }
-//                    cout<<endl;
-////                    tikz.drawEdge(handles[a]->point(),handles[b]->point(), canonicalEdgeOptions);
-////                    tikz.drawEdge(handles[p]->point(),handles[q]->point(), tikz.highlightEdgeOptions);
-//                    //tikz.drawCones(handles[p]->point(),handles[closest[p]]->point(), numCones, 1.0, tikz.coneOptions );
-//
-////                    vector<VertexHandle> pointsToAdd = { handles[p],handles[q],handles[a],handles[b] };
-////                    transform(Q.begin(),Q.end(),inserter(POINT_COLLECTOR),[&](const auto& handle) {
-////                        return handles[handle]->point();
-////                    });
-////                    POINT_COLLECTOR.insert(handles[p]->point());
-////                    for(auto v : pointsToAdd ) {
-////                        auto point = v->point();
-////                        tikz.drawVertexWithLabel(point.x(),point.y(),to_string(v->info()), tikz.activeVertexOptions);
+//            for( auto e : add) {
+//                const index_t a = e.first,
+//                        b = e.second;
+////                if( a==TARGET || b == TARGET ) {
+////                    cout<<"\\texttt{Wedge}($"<<p<<","<<q<<"$) ($\\mathrm{cone}="<<cone<<", j="<<Q[j]<<", i="<<Q[i]<<", k="<<Q[k]<<"\\\\\n";
+////                    for( size_t m=0; m<Q.size(); ++m ) {
+////                        auto angle = getAngle(handles[Q[m+1]]->point(),
+////                                              handles[Q[m]]->point(),
+////                                              handles[Q[m-1]]->point());
+////                        cout<<"$"<<Q[m]<<"$ & $"
+////                            <<(0 < m && m < Q.size()-1 ? to_string(angle) : "\\mathrm{NA}") <<"$ & "
+////                            <<(angle<SIX_PI_OVER_SEVEN&&m!=i&&m!=j&&m!=k ? "T":"F") << " & "
+////                            <<(0<m &&( (Q[m]==b&&Q[m-1]==a) ||( Q[m]==a&&Q[m-1]==b)) ? "add" : "omit")<<"\\\\\n";
 ////                    }
-//                }
-            }
+////                    cout<<endl;
+//////                    tikz.drawEdge(handles[a]->point(),handles[b]->point(), canonicalEdgeOptions);
+//////                    tikz.drawEdge(handles[p]->point(),handles[q]->point(), tikz.highlightEdgeOptions);
+////                    //tikz.drawCones(handles[p]->point(),handles[closest[p]]->point(), numCones, 1.0, tikz.coneOptions );
+////
+//////                    vector<VertexHandle> pointsToAdd = { handles[p],handles[q],handles[a],handles[b] };
+//////                    transform(Q.begin(),Q.end(),inserter(POINT_COLLECTOR),[&](const auto& handle) {
+//////                        return handles[handle]->point();
+//////                    });
+//////                    POINT_COLLECTOR.insert(handles[p]->point());
+//////                    for(auto v : pointsToAdd ) {
+//////                        auto point = v->point();
+//////                        tikz.drawVertexWithLabel(point.x(),point.y(),to_string(v->info()), tikz.activeVertexOptions);
+//////                    }
+////                }
+//            }
 
             std::copy(add.begin(),add.end(),back_inserter(addToE_star));
             // Line 5: if Q' is between j and i, reverse Q then apply the same procedure
@@ -281,21 +306,21 @@ namespace spanner {
 
             add.clear();
             std::optional<size_t> iLessOneCcw = std::make_optional(p),
-                             iLessOneCw =  i > 0 ? std::make_optional(Q[i-1]) : std::nullopt,
-                             iPlusOneCcw = i < k ? std::make_optional(Q[i+1]) : std::nullopt,
-                             iPlusOneCw = iLessOneCcw;
+                    iLessOneCw =  i > 0 ? std::make_optional(Q[i-1]) : std::nullopt,
+                    iPlusOneCcw = i < k ? std::make_optional(Q[i+1]) : std::nullopt,
+                    iPlusOneCw = iLessOneCcw;
 
             std::function<bool(index_t)> inQPrime = [&](index_t v)-> bool {
                 return contains(Q_prime,v);
             };
 //            auto firstInQPrimeIterator = ;
             auto firstInQPrime = static_cast<size_t>(
-                                 distance(Q.begin(),
-                                          find_if(Q.begin(),Q.end(),inQPrime)) ),
-                  lastInQPrime = static_cast<size_t>(
-                                 distance(Q.begin(),
-                                          find_if(Q.rbegin(),Q.rend(),inQPrime).base()) )
-                                 - 1;
+                    distance(Q.begin(),
+                             find_if(Q.begin(),Q.end(),inQPrime)) ),
+                    lastInQPrime = static_cast<size_t>(
+                                           distance(Q.begin(),
+                                                    find_if(Q.rbegin(),Q.rend(),inQPrime).base()) )
+                                   - 1;
 
             assert (firstInQPrime > 0 && firstInQPrime < Q.size()-1);
             assert ( lastInQPrime > 0 &&  lastInQPrime < Q.size()-1);
@@ -314,8 +339,12 @@ namespace spanner {
             if(iLessOneCw && iLessOneCcw && i!=j && i-1 != j
                && getAngle(handles[*iLessOneCcw]->point(),
                            handles[q]->point(),
-                           handles[*iLessOneCw]->point()) > FOUR_PI_OVER_SEVEN ) {
+                           handles[*iLessOneCw]->point()) > FOUR_PI_OVER_SEVEN
+               && (vertexDegree[Q[i]] < numCones-1 && vertexDegree[Q[i-1]] < numCones-1))
+            {
                 add.emplace_back(Q[i],Q[i-1]);
+                vertexDegree[Q[i]]++;
+                vertexDegree[Q[i-1]]++;
             }
 
             // Line 8-9
@@ -328,22 +357,38 @@ namespace spanner {
                                           handles[q]->point(),
                                           handles[*iPlusOneCw]->point());
                 if( a!=k
-                    && ( theta < FOUR_PI_OVER_SEVEN || abs( theta - FOUR_PI_OVER_SEVEN) < EPSILON) ) {
+                    && ( theta < FOUR_PI_OVER_SEVEN || abs( theta - FOUR_PI_OVER_SEVEN) < EPSILON)
+                    && (vertexDegree[Q[f]] < numCones-1 && vertexDegree[Q[a]] < numCones-1))
+                {
                     add.emplace_back(Q[f],Q[a]);
+                    vertexDegree[Q[f]]++;
+                    vertexDegree[Q[a]]++;
                 }
-                if( f+1 != k && theta > FOUR_PI_OVER_SEVEN ) {
+                if( f+1 != k && theta > FOUR_PI_OVER_SEVEN && (vertexDegree[Q[i]] < numCones-1 && vertexDegree[Q[f+1]] < numCones-1))
+                {
                     add.emplace_back(Q[i],Q[f+1]);
+                    vertexDegree[Q[i]]++;
+                    vertexDegree[Q[f+1]]++;
                 }
             } else { // Lines 15-23
                 size_t l = lastInQPrime,
-                       b = l-1;
+                        b = l-1;
 
-                if( l == k-1 ) {
+                if( l == k-1 && (vertexDegree[Q[l]] < numCones-1 && vertexDegree[Q[b]] < numCones-1))
+                {
                     add.emplace_back(Q[l],Q[b]);
+                    vertexDegree[Q[l]]++;
+                    vertexDegree[Q[b]]++;
                 } else {
-                    add.emplace_back(Q[b],Q[l+1]);
-                    if( contains(Q_prime,Q[l-1]) ) {
-                        add.emplace_back(Q[l],Q[l-1]);
+                    if ((vertexDegree[Q[b]] < numCones-1 && vertexDegree[Q[l+1]] < numCones-1)) {
+                        add.emplace_back(Q[b], Q[l + 1]);
+                        vertexDegree[Q[b]]++;
+                        vertexDegree[Q[l+1]]++;
+                    }
+                    if( contains(Q_prime,Q[l-1]) && (vertexDegree[Q[l]] < numCones-1 && vertexDegree[Q[l-1]] < numCones-1)) {
+                        add.emplace_back(Q[l], Q[l - 1]);
+                        vertexDegree[Q[l]]++;
+                        vertexDegree[Q[l-1]]++;
                     }
                 }
             }
@@ -372,8 +417,6 @@ namespace spanner {
     template<size_t DEGREE = 7, size_t NUM_CONES = DEGREE + 1>
     void BCC2012(const bdps::input_t& in, bdps::output_t& out) {
         using namespace bcc2012;
-
-
 
         //assert(DEGREE == 7 || DEGREE == 6);
 
@@ -418,25 +461,27 @@ namespace spanner {
 
         std::vector<index_t> closest(n, SIZE_T_MAX); // id of closest vertex for orienting cones
         std::vector<std::bitset<NUM_CONES>> filled(n); // status of each cone
+        std::vector<size_t> vertexDegree(n, 0);
         std::vector<Edge> E; // output edge list
         std::vector<Edge> E_star; // edges added from "Wedge"
 
         for (auto pq : L) {
             index_t p = pq.first,
-                   q = pq.second;
+                    q = pq.second;
 
             // If either p or q's cone is filled, don't even bother
             if (filled.at(p).count() == NUM_CONES || filled.at(q).count() == NUM_CONES)
                 continue;
 
+            setClosestInCones(closest,p,q);
+
             // Politely ask p if it wants an edge to q
-            std::pair<cone_t,cone_t> cone_p(0,0);
+            std::pair<cone_t, cone_t> cone_p = getCone(handles, closest, p, q, NUM_CONES);
             bool pAbides = vertexAgreesOnEdge<DEGREE>(handles, closest, filled, p, q,
                                                       cone_p);
 
-
             // Politely ask q if it wants an edge to p
-            std::pair<cone_t,cone_t> cone_q(0,0);
+            std::pair<cone_t, cone_t> cone_q = getCone(handles, closest, q, p, NUM_CONES);
             bool qAbides = vertexAgreesOnEdge<DEGREE>(handles, closest, filled, q, p,
                                                       cone_q);
 
@@ -459,15 +504,35 @@ namespace spanner {
             // Only continue if p and q both consent to add the edge
             if (pAbides && qAbides) {
                 E.emplace_back(p, q); // Place the edge
-                std::vector<index_t> pqVec = {p, q};
-                for(auto v : pqVec )
-                    if(filled[v].count()==0) {
-                        auto opposite = v == p ? q : p;
+                vertexDegree[p]++;
+                vertexDegree[q]++;
+                if (vertexDegree[p] > DEGREE || vertexDegree[q] > DEGREE) {
+                    std::cout << "graph exceeds DEGREE !" << std::endl;
+                }
+                // Bookkeeping for p
+                updateVertexConeStatusFilled<DEGREE>(filled,  p,cone_p);
+
+                // Bookkeeping for q
+                updateVertexConeStatusFilled<DEGREE>(filled,  q, cone_q);
+            }
+        }
+
+        for (auto pq : E) {
+            index_t p = pq.first,
+                    q = pq.second;
+
+            std::pair<cone_t, cone_t> cone_p = getCone(handles, closest, p, q, NUM_CONES);
+            std::pair<cone_t, cone_t> cone_q = getCone(handles, closest, q, p, NUM_CONES);
+
+            std::vector<index_t> pqVec = {p, q};
+            for(auto v : pqVec )
+                if(filled[v].count()==0) {
+                    auto opposite = v == p ? q : p;
 //                        tikz.drawCones(handles[v]->point(),
 //                                       handles[opposite]->point(),
 //                                       NUM_CONES, 1.0, tikz.coneOptions);
 //                        tikz.drawEdge(handles[v]->point(),handles[opposite]->point(), tikz.activeEdgeOptions);
-                    }
+                }
 //                if( p==TARGET||q==TARGET ) {
 //                    //tikz.drawEdge(handles[p]->point(), handles[q]->point(), tikz.activeEdgeOptions);
 ////                    if(filled[TARGET].count()==0)
@@ -483,30 +548,29 @@ namespace spanner {
 ////                    }
 //                }
 
-                // Wedge on each cone of pqVec and qp
-                // There will be at least one for each, but there could
-                // be two cones for one or both pqVec and qp if the edgeat(0)
-                // falls on the boundary of a cone and the cone is not already filled
-                std::vector<WedgeParameters> W; // holds the parameters for each call to wedge
+            // Wedge on each cone of pqVec and qp
+            // There will be at least one for each, but there could
+            // be two cones for one or both pqVec and qp if the edgeat(0)
+            // falls on the boundary of a cone and the cone is not already filled
+            std::vector<WedgeParameters> W; // holds the parameters for each call to wedge
 
-                // Bookkeeping for p
-                updateVertexConeStatus<DEGREE>(filled, W, p, q, cone_p);
+            // Bookkeeping for p
+            updateVertexConeStatusWedge<DEGREE>(W, p, q, cone_p);
 
-                // Bookkeeping for q
-                updateVertexConeStatus<DEGREE>(filled, W, q, p, cone_q);
+            // Bookkeeping for q
+            updateVertexConeStatusWedge<DEGREE>(W, q, p, cone_q);
 
-                std::vector<Edge> addToE_star;
+            std::vector<Edge> addToE_star;
 
-                // Wedge on p, q
-                for (auto params : W) {
-                    // find q
-                    auto q_z = DT.incident_vertices(handles.at(params.p));
-                    while (++q_z != handles.at(params.q)); // point to q
+            // Wedge on p, q
+            for (auto params : W) {
+                // find q
+                auto q_z = DT.incident_vertices(handles.at(params.p));
+                while (++q_z != handles.at(params.q)); // point to q
 
-                    wedge<DEGREE>(DT, handles, closest, params, addToE_star);
-                }
-                E_star.insert(E_star.end(), addToE_star.begin(), addToE_star.end());
+                wedge<DEGREE>(DT, handles, closest, vertexDegree, params, addToE_star);
             }
+            E_star.insert(E_star.end(), addToE_star.begin(), addToE_star.end());
         }
 
         // Combine E and E_star, remove duplicates
@@ -543,4 +607,4 @@ namespace spanner {
 
 } // namespace spanner
 
-#endif // SPANNERS_BCC2012_H
+#endif // LIBSPANNER_BCC2012_H

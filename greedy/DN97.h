@@ -9,7 +9,7 @@
 #include <map>
 #include <vector>
 
-#include "libspanner/greedy/types.h"
+#include "../greedy/types.h"
 
 namespace spanner {
 
