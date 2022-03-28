@@ -250,6 +250,9 @@ namespace spanner {
     typedef td::HalfThetaTriangulation<K> DelaunayTD; // the main type
 
 
+    void DelaunayTDSpanner(const bdps::input_t &in, bdps::output_t &out) {
+
+    }
 }
 
 #endif //TD_DELAUNAY_H
