@@ -349,6 +349,13 @@ namespace spanner {
                 }
             }
         }
+        for( index_t i=0; i<N; ++i) {
+            std::transform(CG[i].begin(),CG[i].end(),std::back_inserter(out),
+                [i](const auto& j){
+                    return std::make_pair(i,j);
+                });
+
+        }
     }
 
     void DN97(const greedy::input_t& in, greedy::output_t& out,
@@ -357,12 +364,16 @@ namespace spanner {
 
         const auto& P = in;
         index_t N = P.size();
+
+        if( N <= 1) return;
+
         index_t M;
         index_t D = 2;
 
         std::vector<Edge> clusterGraphEdges;
         ClusterGraph(P, clusterGraphEdges);
 
+        assert(!clusterGraphEdges.empty());
 
         AdjacencyListDense G(N);
 //        std::transform(clusterGraphEdges.begin(), clusterGraphEdges.end(), std::inserter(G,G.end()),
@@ -391,8 +402,9 @@ namespace spanner {
         // sort the edges of G by length
         std::map<Edge,double> Cost;
         std::transform(clusterGraphEdges.begin(),clusterGraphEdges.end(), std::inserter(Cost,Cost.end()),
-            [&P](const Edge& e) {
-                return std::make_pair(e, getDistance(P[e.first],P[e.second]));
+            [&P, &Cost](const Edge& e) {
+                Cost[e] = getDistance(P[e.first],P[e.second]);
+                return std::make_pair(reverse_pair(e), Cost[e]);
             });
 
         std::vector<Edge> clusterGraphEdgesSorted(clusterGraphEdges);

@@ -64,6 +64,11 @@ namespace spanner {
 
     typedef CGAL::Segment_Delaunay_graph_Linf_2<Gt, StorageTraits> DelaunayLinf; // the main type
 
-} // spanners
+
+    void DelaunayLinfSpanner(const bdps::input_t &in, bdps::output_t &out) {
+
+    }
+
+    } // spanners
 
 #endif //SPANNER_DELAUNAYLINF_H
