@@ -13,6 +13,7 @@
 #include <CGAL/Segment_Delaunay_graph_Linf_2.h>
 #include <CGAL/Segment_Delaunay_graph_storage_traits_with_info_2.h>
 
+#include "../points/ordering.h"
 #include "../types.h"
 
 namespace spanner {
@@ -67,6 +68,33 @@ namespace spanner {
 
     void DelaunayLinfSpanner(const bdps::input_t &in, bdps::output_t &out) {
 
+        const index_t n = in.size();
+        if (n > SIZE_T_MAX - 1 || n <= 1) return;
+
+        // construct Linf Delaunay triangulation
+        bdps::input_t P(in);
+        std::vector<size_t> index;
+        spatialSort<K>(P, index);
+        DelaunayLinf DT;
+        DelaunayLinf::Site_2 site;
+        index_t id = 0;
+
+        // store the vertex handles
+        std::vector<DelaunayLinf::Vertex_handle> handles(n);
+
+        //FaceHandle hint;
+        for (size_t entry : index) {
+            Point p = P[entry];
+            site = DelaunayLinf::Site_2::construct_site_2(p);
+            auto vh = DT.insert(site, entry);
+            //hint = vh->face();
+            //vh->storage_site().info() = entry;
+            handles[entry] = vh;
+        }
+        for (auto e = DT.finite_edges_begin(); e != DT.finite_edges_end(); ++e) {
+            out.emplace_back(e->first->vertex((e->second + 1) % 3)->storage_site().info(),
+                             e->first->vertex((e->second + 2) % 3)->storage_site().info());
+        }
     }
 
     } // spanners

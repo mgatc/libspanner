@@ -252,6 +252,19 @@ namespace spanner {
 
     void DelaunayTDSpanner(const bdps::input_t &in, bdps::output_t &out) {
 
+        const index_t n = in.size();
+        if (n > SIZE_T_MAX - 1 || n <= 1) return;
+
+        std::vector<Point> P(in);
+
+        DelaunayTD D(P.begin(), P.end());
+
+        std::set<Edge> E;
+
+        for(auto e=D.edges_begin(); e!=D.edges_end(); ++e) {
+            E.emplace(std::min(D.source(*e),D.target(*e)), std::max(D.source(*e), D.target(*e)));
+        }
+        std::copy(E.begin(), E.end(), std::back_inserter(out));
     }
 }
 

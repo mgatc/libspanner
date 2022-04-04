@@ -207,8 +207,8 @@ namespace spanner {
                 // add intra-cluster edges
                 while (!C1.empty())
                 {
-                    u = C1.back(); // changed from pop to pop_back, maybe an issue down the road
-                    C1.pop_back();
+                    u = C1.front(); // changed from pop to pop_back, maybe an issue down the road
+                    C1.pop_front();
 
                     Edge e = std::make_pair(LNC[u], LNC[v]);
                     double edgeLength = getEdgeLength(e,P);
@@ -226,8 +226,8 @@ namespace spanner {
                 // save information about inter-cluster neighbours
                 while (!C2.empty())
                 {
-                    u = C2.back();
-                    C2.pop_back();
+                    u = C2.front();
+                    C2.pop_front();
                     std::pair<index_t, double> cn(v, dist[u]);
                     cluster_neighbours[u].push_back( cn );
                 }
@@ -235,8 +235,8 @@ namespace spanner {
                 // reset node labels
                 while (!C3.empty())
                 {
-                    u = C3.back();
-                    C3.pop_back();
+                    u = C3.front();
+                    C3.pop_front();
                     pred[u] = SIZE_T_MAX;
                     dist[u] = INF;
                 }
@@ -338,7 +338,7 @@ namespace spanner {
                         if (!IsClusterCenter[e.second])
                             newd += getEdgeLength(ev,P); // add distance to cluster center
 
-                        if (getEdgeLength(uve,P) > newd) {
+                        if (CGdist[uve.first][uve.second] > newd) {
 //                            if (DEBUG) cerr << "distance updated!!\n";
 //                            CG[uve] = newd;
                             double edgeLength = getEdgeLength(uve,P);
@@ -386,18 +386,14 @@ namespace spanner {
         // Construct the spanner graph SG
         // *********************************************
 
-        AdjacencyListDense SG;
-
-
-
+        AdjacencyListDense SG(N,AdjacencyListDense::value_type());
 
         std::vector<index_t> LNS(N);
-
-        SG.clear();
-        for (index_t i = 0; i < N; i++)
-        {
-            LNS[i] = i;
-        }
+        std::iota(LNS.begin(), LNS.end(), 0);
+//        for (index_t i = 0; i < N; i++)
+//        {
+//            LNS[i] = i;
+//        }
 
         // sort the edges of G by length
         std::map<Edge,double> Cost;

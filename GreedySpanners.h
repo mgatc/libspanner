@@ -5,12 +5,14 @@
 #include <vector>
 
 #include "greedy/DN97.h"
+#include "greedy/GreedySpanner.h"
 
 namespace spanner {
 
     enum GreedySpannerAlgorithm {
         GreedySpannerAlgorithmFirst = 0,
         Dn97 = AlgorithmFirst,
+        ClassicGreedy,
         GreedySpannerAlgorithmLast
     };
 
@@ -19,6 +21,7 @@ namespace spanner {
         const std::string ALGORITHM_SYMBOL = "Algorithm";
         const std::vector<std::string> ALGORITHM_NAMES = {
                 "DN97",
+                "ClassicGreedy",
         };
     } // greedy
 
