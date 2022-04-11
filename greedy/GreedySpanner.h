@@ -5,6 +5,7 @@
 #ifndef SP_MER_17_GREEDYSPANNER_H
 #define SP_MER_17_GREEDYSPANNER_H
 
+#include <limits>
 #include <map>
 #include <queue>
 #include <unordered_map>
@@ -19,68 +20,76 @@
 
 namespace spanner {
 namespace classic_greedy {
-    double shortestPath(const std::vector<Point> &points,
-                        std::pair<int, int> cur,
-                        const std::unordered_map<int, std::vector<int>> &adjMap) {
-        std::vector<number_t> distances(points.size(), DBL_MAX);
-        distances[cur.first] = 0.0;
-        //priority_queue<pair<number_t, int>, vector<pair<number_t,int>>, greater<>> pq;
-        std::map<number_t, int> lookup;
-        std::vector<std::map<number_t, int>::iterator> handles(points.size(), lookup.end());
-        //pq.push(make_pair(0.0, cur.first));
-        auto x = lookup.emplace(0.0, cur.first);
-        handles[cur.first] = x.first;
-        while (!lookup.empty()) {
-            auto curr = lookup.begin();
-            auto adj = adjMap.at(curr->second);
-            for (auto a: adj) {
-                double pathTotal_With_Adjacent_Distance = curr->first + getDistance(points[curr->second], points[a]);
-                //distance_to_current + getDistance(points[current_position], points[a]);
-                if (distances[a] > pathTotal_With_Adjacent_Distance) {
-                    distances[a] = pathTotal_With_Adjacent_Distance;
-                    //pq.push(make_pair(pathTotal_With_Adjacent_Distance, a));
-                    if (handles[a] != lookup.end()) lookup.erase(handles[a]);
-                    auto y = lookup.emplace(pathTotal_With_Adjacent_Distance, a);
+    number_t shortestPath(const std::vector<Point> &P,
+                        const Edge &currentPair,
+                        const AdjacencyListDense &adjMap) {
+
+        std::unordered_map<index_t,number_t> g;
+        std::unordered_map<index_t,number_t> f;
+
+        g[currentPair.first] = 0.0;
+        f[currentPair.first] = getDistance(P.at(currentPair.first), P.at(currentPair.second));
+
+        std::map<number_t, index_t> open;
+        std::unordered_map<index_t,std::map<number_t, index_t>::iterator> handles;
+
+        auto x = open.emplace(f.at(currentPair.first), currentPair.first);
+        handles[currentPair.first] = x.first;
+
+        while (!open.empty()) {
+            auto curr = open.begin();
+            if(curr->second == currentPair.second) {
+                return g.at(currentPair.second);
+            }
+//            auto& adj = adjMap.at(curr->second);
+            for (auto a : adjMap.at(curr->second)) {
+                number_t newG = g.at(curr->second) + getDistance(P.at(curr->second), P.at(a));
+                //distance_to_current + getDistance(P[current_position], P[a]);
+                if (!contains(g, a) || g.at(a) > newG) {
+                    g[a] = newG;
+                    f[a] = newG + getDistance(P[a], P[currentPair.second]);
+                    //pq.push(make_pair(newG, a));
+                    if (contains(handles,a) ) open.erase(handles[a]);
+                    auto y = open.emplace(f.at(a), a);
                     handles[a] = y.first;
                 }
             }
-            lookup.erase(curr);
+            open.erase(curr);
         }
-        return distances[cur.second];
+        return INF;
     }
 
-    void sortPairs(const std::vector<Point> &points,
-                   std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::function<bool(
-                           std::pair<int, int>, std::pair<int, int>)>> &pq) {
-        for (size_t i = 0; i < points.size(); ++i) {
-            for (size_t j = i + 1; j < points.size(); ++j) {
-                pq.push(std::make_pair(i, j));
-            }
-        }
-    }
 }
 
-    void GreedySpanner(const greedy::input_t& points, greedy::output_t& out, const double t = 1.0) {
-//    void GreedySpanner(const std::vector<Point> &points, const std::vector<int> &indices,
+    void GreedySpanner(const greedy::input_t& P, greedy::output_t& out, const double t = 1.0) {
+//    void GreedySpanner(const std::vector<Point> &P, const std::vector<int> &indices,
 //                       std::vector<Edge> &edges, double t,
 //                       std::unordered_map<int, std::vector<int>> &adjMap){
         assert( t > 1.0 - std::numeric_limits<double>::epsilon());
 
-        std::function<bool(std::pair<int,int>, std::pair<int,int>)> cmp = [&points](std::pair<int,int> uv, std::pair<int,int> wx){
-            return (getDistance(points[uv.first], points[uv.second])) > (getDistance(points[wx.first], points[wx.second]));
-        };
-        std::priority_queue<std::pair<int,int>, std::vector<std::pair<int,int>>, std::function<bool(std::pair<int,int>, std::pair<int,int>)>> pairs(cmp);
+        const index_t n = P.size();
 
-        classic_greedy::sortPairs(points, pairs);
-        std::unordered_map<int, std::vector<int>> adjMap;
-        while(!pairs.empty()){
-            if(classic_greedy::shortestPath(points, pairs.top(), adjMap) >
-               t * getDistance(points[pairs.top().first], points[pairs.top().second])){
-                out.emplace_back(std::make_pair(pairs.top().first, pairs.top().second));
-                adjMap[pairs.top().first].emplace_back(pairs.top().second);
-                adjMap[pairs.top().second].emplace_back(pairs.top().first);
+        AdjacencyListDense adjMap(n, std::unordered_set<index_t>());
+
+        std::vector<Edge> allPairs;
+        allPairs.reserve(n*n);
+
+        for (size_t i = 0; i < P.size(); ++i) {
+            for (size_t j = i + 1; j < P.size(); ++j) {
+                allPairs.emplace_back(i, j);
             }
-            pairs.pop();
+        }
+        std::sort(allPairs.begin(), allPairs.end(), [&P]( const Edge& uv,  const Edge& wx){
+            return (CGAL::squared_distance(P[uv.first], P[uv.second])) < (CGAL::squared_distance(P[wx.first], P[wx.second]));
+        });
+
+        for(auto currentPair : allPairs ){
+            if(classic_greedy::shortestPath(P, currentPair, adjMap) >
+               static_cast<number_t>(t) * getDistance(P[currentPair.first], P[currentPair.second])){
+                out.emplace_back(currentPair.first, currentPair.second);
+                adjMap[currentPair.first].insert(currentPair.second);
+                adjMap[currentPair.second].insert(currentPair.first);
+            }
         }
     }
 
