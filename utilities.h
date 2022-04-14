@@ -85,8 +85,8 @@ namespace spanner {
         return str;
     }
     std::string removeSpaces(std::string str) {
-        char *space = " ";
-        return removeCharsFromString(str,space);
+        char space[] = " ";
+        return removeCharsFromString(std::move(str),space);
     }
     std::vector<std::string> getNextLineAndSplitIntoTokens(std::istream& str)
     {

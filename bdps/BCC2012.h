@@ -78,7 +78,7 @@ namespace spanner {
             return !pGivenConeFilled && !pPrevConeFilled; ////////
         }
         void setClosestInCone(std::vector<index_t> &closest,const index_t p,const index_t q){
-            if (closest.at(p) == SIZE_T_MAX) { // AlgorithmFirst, make sure the closest vertex is set
+            if (closest.at(p) == SIZE_T_MAX) { // BdpsAlgorithmFirst, make sure the closest vertex is set
                 closest[p] = q;
             }
         }

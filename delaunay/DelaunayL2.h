@@ -136,7 +136,7 @@ class DelaunayGraph {
     inline void normalizeCirculator(VertexCirculator &C, const VertexHash& invalid ) const {
         VertexCirculator done = C;
         // Position circulator so that we are guaranteed to be on the first vertex on the path N_i
-        // AlgorithmFirst, loop until the circulator reaches an invalid vertex or completes a full rotation
+        // BdpsAlgorithmFirst, loop until the circulator reaches an invalid vertex or completes a full rotation
         while( !contains( invalid, C ) && !m_DT.is_infinite(C) && ++C != done );// cout<<v_n->point()<<"\n";
         done = C;
         // Loop until the circulator reaches a valid vertex

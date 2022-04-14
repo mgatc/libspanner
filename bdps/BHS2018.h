@@ -203,7 +203,7 @@ namespace spanner {
                     }
                 }
 
-                //AlgorithmFirst and last edges in the canonical neighborhood are considered and added by 3 criteria. (4.4)
+                //BdpsAlgorithmFirst and last edges in the canonical neighborhood are considered and added by 3 criteria. (4.4)
                 std::vector<cone_t> cone(6);
                 for (cone_t i = 0; i < 6; ++i) {
                     cone[i] = (p_cone + i) % 6;

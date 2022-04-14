@@ -20,8 +20,8 @@
 namespace spanner {
 
     enum BoundedDegreePlaneSpannerAlgorithm {
-        AlgorithmFirst = 0,
-        Bgs2005 = AlgorithmFirst,
+        BdpsAlgorithmFirst = 0,
+        Bgs2005 = BdpsAlgorithmFirst,
         Lw2004,
         Bsx2009,
         Kpx2010,
@@ -30,10 +30,10 @@ namespace spanner {
         Bcc2012_7,
         Bcc2012_6,
         Bghp2010,
-        Bkpx2015,// = AlgorithmFirst,
+        Bkpx2015,// = BdpsAlgorithmFirst,
         Kpt2017,
         Degree3,
-        AlgorithmLast
+        BdpsAlgorithmLast
     };
 
     namespace bdps {

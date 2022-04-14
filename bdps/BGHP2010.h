@@ -192,7 +192,7 @@ namespace spanner {
             const index_t n = P.size();
 
             // Add first and last in each negative cone if it is (i+1)-relevant
-            if (printLog) std::cout << "\nFirst and AlgorithmLast\n";
+            if (printLog) std::cout << "\nFirst and BdpsAlgorithmLast\n";
             for (index_t u = 0; u < n; ++u) {
                 // get edges from positive cones
                 for (auto it = D.positive_cone_edges_begin(u);
