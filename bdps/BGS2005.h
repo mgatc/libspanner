@@ -653,7 +653,7 @@ void PolygonSpanner( DelaunayGraph& SG, SplitVertexSet& V, SplitVertexEdgeMap& E
 } // namespace bgs2005
 
 
-void BGS2005(const bdps::input_t &in, bdps::output_t out) {
+void BGS2005(const bdps::input_t &in, bdps::output_t& out) {
     using namespace bgs2005;
 
     DelaunayGraph G(in.begin(), in.end()); // Step 1
@@ -672,14 +672,13 @@ void BGS2005(const bdps::input_t &in, bdps::output_t out) {
 
     PolygonSpanner(G, V, P); // Step 4
 
-    auto result = std::back_inserter(out);
+//    auto result = std::back_inserter(out);
 
     // send resulting edge list to output iterator
     for( auto const& adj : G.m_E ) {
         VertexHandle v_1 = adj.first;
         for( auto const& v_2 : adj.second ) {
-            *result = std::make_pair( v_1->info(), v_2->info() );
-            ++result;
+            out.emplace_back( v_1->info(), v_2->info() );
         }
     }
 }

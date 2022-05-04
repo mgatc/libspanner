@@ -75,9 +75,17 @@ namespace spanner {
         index_tPairMap E; // list of potential edges, value must be true for insertion to result
 
         // Iterate through vertices in T
+        std::vector<VertexHandle> sortedVertices;
+
 
         for (auto m = T.finite_vertices_begin(); m != T.finite_vertices_end(); ++m) {
-            //if( printLog ) cout<<"\n\nm:"<<m->info()<<" ";
+            sortedVertices.push_back(m);
+        }
+        std::sort(sortedVertices.begin(), sortedVertices.end(), [](const auto& lhs, const auto& rhs) {
+            return lhs->info() < rhs->info();
+        });
+        for(auto m : sortedVertices){
+            std::cout<<"\n\nm:"<<m->info()+1<<" \n";
 
             // Get neighbors of m
             VertexCirculator N = T.incident_vertices(m);
@@ -115,12 +123,11 @@ namespace spanner {
 
                     if (angleSum > FOUR_PI_OVER_FIVE) {
                         wideVertices.insert(angleSet.begin(), angleSet.end());
-                        if (printLog) {
-                            std::cout << "Points: {" << angleSet[2]->info() << "," << m->info() << ","
-                                 << angleSet[0]->info()
-                                 << "} make getAngle: " << angleSum << std::endl;
+                        std::cout << "Points: {" << angleSet[2]->info()+1 << "," << m->info()+1 << ","
+                             << angleSet[0]->info()+1
+                             << "} make getAngle: " << angleSum << std::endl;
 
-                        }
+
                         coneReferenceHandle = angleSet[2];
                     }
 
@@ -131,9 +138,12 @@ namespace spanner {
                 } while (angleSet[0] != done);
 
 
+                std::cout<<"wide: ";
                 for (const auto &v : wideVertices) {
+                    std::cout<<v->info()+1<<"-";
                     selectEdge( E, m, v);
                 }
+                std::cout<<"\n";
             }
             Point coneReferencePoint(coneReferenceHandle->point());
             //number_t conalAngle;
@@ -150,8 +160,10 @@ namespace spanner {
                         if (spanner::contains(wideVertices, N)) {
                             if (!closestVertexInCone.empty()) {
                                 coneReferencePoint = N->point();
+                                std::cout<<"closest in cone: ";
                                 for (const auto &v : closestVertexInCone) {
                                     selectEdge( E, m, v.second);
+                                    std::cout << v.second->info()+1<<"-";
                                 }
                                 closestVertexInCone.clear();
                                 closestPointDistanceInCone.clear();
@@ -170,9 +182,12 @@ namespace spanner {
                     }
                 } while (++N != done);
 
+                std::cout<<"closest in cone: ";
                 for (const auto &v : closestVertexInCone) {
+                    std::cout<<v.second->info()+1<<"-";
                     selectEdge( E, m, v.second);
                 }
+                std::cout<<"\n";
             }
 
             {
@@ -196,6 +211,7 @@ namespace spanner {
 
                             for (int conalEdgesToAdd = std::min(conalDifference - 1, 2);
                                  conalEdgesToAdd > 0; conalEdgesToAdd--) {
+                                std::cout<<"empty: ";
                                 //Determine if one of the edges adjacent to the empty cone is selected already
                                 bool containsPreviousPoint = spanner::contains(E,
                                                                                 std::make_pair(currentPointIndex,
@@ -205,15 +221,18 @@ namespace spanner {
                                 //assert(previousPoint.second != v_inf);
                                 //assert(N->handle() != v_inf);
                                 if (containsPreviousPoint && !containsN) {
+                                    std::cout<<N->handle()->info()+1<< "already selected, selecting "<< previousPoint.second->info()+1<<"\n";
                                     selectEdge(E, m, previousPoint.second);
                                 } else if (!containsPreviousPoint && containsN) {
+                                    std::cout<<previousPoint.second->info()+1<< "already selected, selecting "<< N->handle()->info()+1<<"\n";
                                     selectEdge( E, m, N->handle());
                                 } else //If neither adjacent edge is already selected, add the longest one
                                 {
+                                    std::cout<<"Neither selected, selecting the longer of "<< N->handle()->info()+1<<" and "<<previousPoint.second->info()+1<<": ";
                                     VertexHandle edgeToAdd =
                                             getDistance(N->point(), p) > getDistance(previousPoint.second->point(), p)
                                             ? N->handle() : previousPoint.second;
-
+                                    std::cout<<edgeToAdd->info()+1<<"\n";
                                     selectEdge( E, m, edgeToAdd);
                                 }
                             }
