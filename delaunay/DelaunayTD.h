@@ -22,6 +22,7 @@
 #include <boost/property_map/property_map.hpp>
 
 #include "../constants.h"
+#include "../geometry.h"
 #include "../types.h"
 #include "../utilities.h"
 
